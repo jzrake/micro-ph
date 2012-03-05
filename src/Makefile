@@ -11,8 +11,8 @@ default : $(EXE)
 $(BIN) : 
 	mkdir $(BIN)
 
-$(EXE) : micro-ph.o
-	$(CC) $(CFLAGS) -o $@ $^
+$(EXE) : micro-ph.o $(BIN)
+	$(CC) $(CFLAGS) -o $@ $<
 
 clean :
 	rm -f *.o

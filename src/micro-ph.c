@@ -93,6 +93,8 @@ double integrate_to_infinite(double (*f)(double t, double y))
   return y;
 }
 
+
+
 double evaluate_ne_42(double eta, double beta)
 {
   EtaValue = eta;
@@ -108,6 +110,10 @@ double evaluate_np_45(double eta, double beta)
 
 
 void test_number_densities()
+// -----------------------------------------------------------------------------
+// Compare results of numerical integration with those giben by Mathematica's
+// NIntegrate.
+// -----------------------------------------------------------------------------
 {
   printf("ne(1.0, 1.0) = %18.15e (8.518609867257567e+00)\n", evaluate_ne_42(1.0, 1.0));
   printf("np(1.0, 1.0) = %18.15e (2.176235567609514e-01)\n", evaluate_np_45(1.0, 1.0));
