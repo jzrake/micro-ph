@@ -216,25 +216,30 @@ void microph_test_npu()
 
   printf("\ntesting number densities...\n");
   printf(sep);
-  printf("ne(1.0, 1.0) = %18.15e (8.518609867257567e+00)\n", evaluate_ne_42(1.0, 1.0));
-  printf("np(1.0, 1.0) = %18.15e (2.176235567609514e-01)\n", evaluate_np_45(1.0, 1.0));
-  printf("ne(1.0, 0.1) = %18.15e (4.696042780715451e+03)\n", evaluate_ne_42(1.0, 0.1));
-  printf("np(1.0, 0.1) = %18.15e (6.390164655753489e+02)\n", evaluate_np_45(1.0, 0.1));
+  const double T0[] = { 8.518609867257567, 0.21762355676095138, // true
+			4696.042780715451, 639.0164655753489 };
+  printf("ne(1.0, 1.0) = %18.15e (%18.15e)\n", evaluate_ne_42(1.0, 1.0), T0[0]);
+  printf("np(1.0, 1.0) = %18.15e (%18.15e)\n", evaluate_np_45(1.0, 1.0), T0[1]);
+  printf("ne(1.0, 0.1) = %18.15e (%18.15e)\n", evaluate_ne_42(1.0, 0.1), T0[2]);
+  printf("np(1.0, 0.1) = %18.15e (%18.15e)\n", evaluate_np_45(1.0, 0.1), T0[3]);
 
   printf("\ntesting pressures...\n");
   printf(sep);
-  printf("Pe(1.0, 1.0) = %18.15e (2.970525729398766e+01)\n", evaluate_Pe_43(1.0, 1.0));
-  printf("Pp(1.0, 1.0) = %18.15e (6.562580252817735e-01)\n", evaluate_Pp_46(1.0, 1.0));
-  printf("Pe(1.0, 0.1) = %18.15e (1.571436949436383e+05)\n", evaluate_Pe_43(1.0, 0.1));
-  printf("Pp(1.0, 0.1) = %18.15e (1.953555533242760e+04)\n", evaluate_Pp_46(1.0, 0.1));
+  const double T1[] = { 29.705257293987664, 0.6562580252817735,
+			157143.69494363826,19535.555332427597 };
+  printf("Pe(1.0, 1.0) = %18.15e (%18.15e)\n", evaluate_Pe_43(1.0, 1.0), T1[0]);
+  printf("Pp(1.0, 1.0) = %18.15e (%18.15e)\n", evaluate_Pp_46(1.0, 1.0), T1[1]);
+  printf("Pe(1.0, 0.1) = %18.15e (%18.15e)\n", evaluate_Pe_43(1.0, 0.1), T1[2]);
+  printf("Pp(1.0, 0.1) = %18.15e (%18.15e)\n", evaluate_Pp_46(1.0, 0.1), T1[3]);
 
   printf("\ntesting internal energy densities...\n");
   printf(sep);
-  printf("Pe(1.0, 1.0) = %18.15e (2.390933965258743e+01)\n", evaluate_ue_44(1.0, 1.0));
-  printf("Pp(1.0, 1.0) = %18.15e (9.540921687756961e-01)\n", evaluate_up_47(1.0, 1.0));
-  printf("Pe(1.0, 0.1) = %18.15e (1.526403704611330e+05)\n", evaluate_ue_44(1.0, 0.1));
-  printf("Pp(1.0, 0.1) = %18.15e (2.020504623818944e+04)\n", evaluate_up_47(1.0, 0.1));
-
+  const double T2[] = { 23.909339652587427, 0.9540921687756961,
+			152640.37046113302, 20205.04623818944 };
+  printf("Pe(1.0, 1.0) = %18.15e (%18.15e)\n", evaluate_ue_44(1.0, 1.0), T2[0]);
+  printf("Pp(1.0, 1.0) = %18.15e (%18.15e)\n", evaluate_up_47(1.0, 1.0), T2[1]);
+  printf("Pe(1.0, 0.1) = %18.15e (%18.15e)\n", evaluate_ue_44(1.0, 0.1), T2[2]);
+  printf("Pp(1.0, 0.1) = %18.15e (%18.15e)\n", evaluate_up_47(1.0, 0.1), T2[3]);
 }
 
 void microph_test_eta()
