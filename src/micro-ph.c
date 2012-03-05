@@ -5,10 +5,12 @@
 #include <math.h>
 
 
-static double INTEGRATE_STEP_SIZE = 1e-2;
-static double ZERO_SLOPE_REACHED  = 1e-10;
-static int    ZERO_SLOPE_REPEATED = 10;
-static int    MAXIMUM_ITERATION   = 1000000;
+static int    MAX_INTEGRAL_ITER    = 1000000;
+static double INTEGRATE_STEP_SIZE  = 1e-2;
+static double ZERO_SLOPE_REACHED   = 1e-10;
+static int    ZERO_SLOPE_REPEATED  = 10;
+static double ZERO_SECANT_REACHED  = 1e-12;
+static int    MAX_SECANT_ITER      = 50;
 
 
 static double  EtaValue = 1.0; // mu/kT     ... degeneracy parameter
@@ -117,7 +119,7 @@ double integrate_to_infinite(double (*f)(double t, double y))
     if (n_zero_slope == ZERO_SLOPE_REPEATED) {
       break;
     }
-    else if (++niter == MAXIMUM_ITERATION) {
+    else if (++niter == MAX_INTEGRAL_ITER) {
       printf("[%s]: warning! convergence took too many iterations\n", __FUNCTION__);
       break;
     }
@@ -169,6 +171,40 @@ double evaluate_up_47(double eta, double beta)
 
 
 
+double solve_for_eta(double beta, double C)
+// -----------------------------------------------------------------------------
+// Solves the implicit equation ne(e,b) - np(e,b) = C for e := eta, where C is a
+// constant, typically the total number of positive charges in the
+// characteristic volume V0 := pi^2 (hbar / me c)^3.
+// -----------------------------------------------------------------------------
+{
+  int niter = 0;
+  double eta0 = -1.0; // starting guess values sandwich the root if possible
+  double eta1 = +1.0;
+  double eta2;
+
+  while (1) {
+
+    double f0 = evaluate_ne_42(eta0, beta) - evaluate_np_45(eta0, beta) - C;
+    double f1 = evaluate_ne_42(eta1, beta) - evaluate_np_45(eta1, beta) - C;
+
+    eta2 = eta1 - f1 * (eta1 - eta0) / (f1 - f0);
+    eta0 = eta1;
+    eta1 = eta2;
+
+    if (fabs(f1) < ZERO_SECANT_REACHED) {
+      break;
+    }
+    else if (++niter == MAX_SECANT_ITER) {
+      printf("[%s]: warning! convergence took too many iterations\n", __FUNCTION__);
+      break;
+    }
+  }
+
+  return eta2;
+}
+
+
 void microph_test_npu()
 // -----------------------------------------------------------------------------
 // Compare results of numerical integration with those given by Mathematica's
@@ -190,20 +226,34 @@ void microph_test_npu()
   printf("Pe(1.0, 1.0) = %18.15e (2.970525729398766e+01)\n", evaluate_Pe_43(1.0, 1.0));
   printf("Pp(1.0, 1.0) = %18.15e (6.562580252817735e-01)\n", evaluate_Pp_46(1.0, 1.0));
   printf("Pe(1.0, 0.1) = %18.15e (1.571436949436383e+05)\n", evaluate_Pe_43(1.0, 0.1));
-  printf("Pp(1.0, 0.1) = %18.15e (1.9535555332427597+04)\n", evaluate_Pp_46(1.0, 0.1));
+  printf("Pp(1.0, 0.1) = %18.15e (1.953555533242760e+04)\n", evaluate_Pp_46(1.0, 0.1));
 
   printf("\ntesting internal energy densities...\n");
   printf(sep);
   printf("Pe(1.0, 1.0) = %18.15e (2.390933965258743e+01)\n", evaluate_ue_44(1.0, 1.0));
   printf("Pp(1.0, 1.0) = %18.15e (9.540921687756961e-01)\n", evaluate_up_47(1.0, 1.0));
-  printf("Pe(1.0, 0.1) = %18.15e (1.5264037046113302+05)\n", evaluate_ue_44(1.0, 0.1));
-  printf("Pp(1.0, 0.1) = %18.15e (2.0205046238189440+04)\n", evaluate_up_47(1.0, 0.1));
+  printf("Pe(1.0, 0.1) = %18.15e (1.526403704611330e+05)\n", evaluate_ue_44(1.0, 0.1));
+  printf("Pp(1.0, 0.1) = %18.15e (2.020504623818944e+04)\n", evaluate_up_47(1.0, 0.1));
 
 }
+
+void microph_test_eta()
+{
+  const char *sep = "**************************************************\n";
+
+  printf("\ntesting solution to chemical potential...\n");
+  printf(sep);
+  printf("%+18.15e (%+18.15e)\n", solve_for_eta(1e0, 1.0), -0.6525037133686798);
+  printf("%+18.15e (%+18.15e)\n", solve_for_eta(1e1, 1.0),  7.316055681629137);
+  printf("%+18.15e (%+18.15e)\n", solve_for_eta(1e2, 1.0), 75.47842301516384);
+}
+
 
 
 int main()
 {
   microph_test_npu();
+  microph_test_eta();
+
   return 0;
 }
