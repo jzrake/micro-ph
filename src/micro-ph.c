@@ -26,7 +26,17 @@
 #include <stdio.h>
 #include <math.h>
 
-
+struct ThermalState
+{
+  double density;  // baryon mass density (g/cm^3)
+  double kT;       // temperature (MeV)
+  double mu_ep;    // chemical potential for e+/e- pairs (MeV)
+  double mu_nu;    // chemical potential for neutrino (MeV)
+  double Ye;       // electron/proton fraction
+  double n;        // number density (1/fm^3)
+  double p;        // pressure (MeV/fm^3)
+  double u;        // internal energy (MeV/fm^3)
+};
 
 const int mphElectrons   =  (1 << 0);
 const int mphPositrons   =  (1 << 1);
@@ -311,6 +321,69 @@ double solve_for_eta_neutrino(double beta, double C)
   return eta2;
 }
 
+void microph_get(struct ThermalState *S, int flags)
+// -----------------------------------------------------------------------------
+// Evaluate the pressure (in MeV/fm^3), including terms specified by 'flags'.
+//
+// Implemented terms are:
+//
+// (+) mphElectrons
+// (+) mphPositrons
+// (+) mphNeutrinos
+// (+) mphPhotons
+//
+// -----------------------------------------------------------------------------
+{
+  S->n = 0.0;
+  S->p = 0.0;
+  S->u = 0.0;
+
+  // Electrons
+  // ---------------------------------------------------------------------------
+  if (flags & mphElectrons) {
+    const double Volume = pow(M_PI, 2) * pow(HBAR_C/ELECTRON_MASS, 3);
+    const double Energy = ELECTRON_MASS;
+    const double eta = S->mu_ep / S->kT;
+    const double beta = ELECTRON_MASS / S->kT;
+
+    S->n += (1.0    / Volume) * evaluate_ne(eta, beta);
+    S->p += (Energy / Volume) * evaluate_pe(eta, beta);
+    S->u += (Energy / Volume) * evaluate_ue(eta, beta);
+  }
+
+  // Positrons
+  // ---------------------------------------------------------------------------
+  if (flags & mphPositrons) {
+    const double Volume = pow(M_PI, 2) * pow(HBAR_C/ELECTRON_MASS, 3);
+    const double Energy = ELECTRON_MASS;
+    const double eta = S->mu_ep / S->kT;
+    const double beta = ELECTRON_MASS / S->kT;
+
+    S->n += (1.0    / Volume) * evaluate_np(eta, beta);
+    S->p += (Energy / Volume) * evaluate_pp(eta, beta);
+    S->u += (Energy / Volume) * evaluate_up(eta, beta);
+  }
+
+  // Neutrinos
+  // ---------------------------------------------------------------------------
+  if (flags & mphNeutrinos) {
+    const double Volume = pow(M_PI, 2) * pow(HBAR_C/S->kT, 3);
+    const double Energy = S->kT;
+    const double eta = S->mu_nu / S->kT;
+
+    S->n += (Energy / Volume) * evaluate_neutrino_n(eta);
+    S->p += (Energy / Volume) * evaluate_neutrino_p(eta);
+    S->u += (Energy / Volume) * evaluate_neutrino_u(eta);
+  }
+
+  // Photons
+  // ---------------------------------------------------------------------------
+  if (flags & mphPhotons) {
+
+  }
+}
+
+
 
 void microph_test_npu()
 // -----------------------------------------------------------------------------
@@ -321,7 +394,7 @@ void microph_test_npu()
 {
   const char *sep = "**************************************************\n";
 
-  printf("\ntesting number densities...\n");
+  printf("\ntesting number densities\n");
   printf(sep);
   const double T0[] = { 8.518609867257567, 0.21762355676095138, // true
 			4696.042780715451, 639.0164655753489 };
@@ -330,7 +403,7 @@ void microph_test_npu()
   printf("ne(1.0, 0.1) = %18.15e (%18.15e)\n", evaluate_ne(1.0, 0.1), T0[2]);
   printf("np(1.0, 0.1) = %18.15e (%18.15e)\n", evaluate_np(1.0, 0.1), T0[3]);
 
-  printf("\ntesting pressures...\n");
+  printf("\ntesting pressures\n");
   printf(sep);
   const double T1[] = { 29.705257293987664, 0.6562580252817735,
 			157143.69494363826, 19535.555332427597 };
@@ -339,7 +412,7 @@ void microph_test_npu()
   printf("pe(1.0, 0.1) = %18.15e (%18.15e)\n", evaluate_pe(1.0, 0.1), T1[2]);
   printf("pp(1.0, 0.1) = %18.15e (%18.15e)\n", evaluate_pp(1.0, 0.1), T1[3]);
 
-  printf("\ntesting internal energy densities...\n");
+  printf("\ntesting internal energy densities\n");
   printf(sep);
   const double T2[] = { 23.909339652587427, 0.9540921687756961,
 			152640.37046113302, 20205.04623818944 };
@@ -356,14 +429,14 @@ void microph_test_eta()
   double (*f)(double, double);
 
   f = solve_for_eta_pairs;
-  printf("\ntesting solution to chemical potential of pairs...\n");
+  printf("\ntesting solution to chemical potential of pairs\n");
   printf(sep);
   printf("%+18.15e (%+18.15e)\n", f(1e0, 1.0), -0.6525037133686798);
   printf("%+18.15e (%+18.15e)\n", f(1e1, 1.0),  7.316055681629137);
   printf("%+18.15e (%+18.15e)\n", f(1e2, 1.0), 75.47842301516384);
 
   f = solve_for_eta_neutrino;
-  printf("\ntesting solution to chemical potential of neutrinos...\n");
+  printf("\ntesting solution to chemical potential of neutrinos\n");
   printf(sep);
   printf("%+18.15e\n", f(1e-1, 1.0));
   printf("%+18.15e\n", f(1e+0, 1.0));
@@ -371,61 +444,22 @@ void microph_test_eta()
 }
 
 
-double microph_get(int flags)
-// -----------------------------------------------------------------------------
-// Evaluate the pressure (in MeV/fm^3), including terms specified by 'flags'.
-//
-// Implemented terms are:
-//
-// (+) mphElectrons
-// (+) mphPositrons
-// (+) mphNeutrinos
-// (+) mphPhotons
-//
-// -----------------------------------------------------------------------------
+void microph_test_eos()
 {
-  const double kT = 1.0; // MeV
-  const double eta = 1.0;
+  const char *sep = "**************************************************\n";
+  printf("\ntesting pressure contributions from various terms\n");
+  printf(sep);
 
-  double p = 0.0;
+  struct ThermalState S;
 
-  // Electrons
-  // ---------------------------------------------------------------------------
-  if (flags & mphElectrons) {
-    const double Volume = pow(M_PI, 2) * pow(HBAR_C/ELECTRON_MASS, 3);
-    const double Energy = ELECTRON_MASS;
-    const double beta = ELECTRON_MASS / kT;
+  S.kT = 10.0;
+  S.mu_ep = 5.0;
 
-    p += (Energy / Volume) * evaluate_pe(eta, beta);
-  }
+  microph_get(&S, mphElectrons);
+  printf("Electron pressure = %e MeV/fm^3\n", S.p);
 
-  // Positrons
-  // ---------------------------------------------------------------------------
-  if (flags & mphPositrons) {
-
-    const double Volume = pow(M_PI, 2) * pow(HBAR_C/ELECTRON_MASS, 3);
-    const double Energy = ELECTRON_MASS;
-    const double beta = ELECTRON_MASS / kT;
-
-    p += (Energy / Volume) * evaluate_pp(eta, beta);
-  }
-
-  // Neutrinos
-  // ---------------------------------------------------------------------------
-  if (flags & mphNeutrinos) {
-    const double Volume = pow(M_PI, 2) * pow(HBAR_C/kT, 3);
-    const double Energy = kT;
-
-    p += (Energy / Volume) * evaluate_neutrino_p(eta);
-  }
-
-  // Photons
-  // ---------------------------------------------------------------------------
-  if (flags & mphPhotons) {
-
-  }
-
-  return p;
+  microph_get(&S, mphPositrons);
+  printf("Positron pressure = %e MeV/fm^3\n", S.p);
 }
 
 
@@ -433,8 +467,7 @@ int main()
 {
   microph_test_npu();
   microph_test_eta();
-
-  microph_get(mphPositrons | mphPhotons | mphNeutrinos);
+  microph_test_eos();
 
   return 0;
 }
