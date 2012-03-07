@@ -120,8 +120,8 @@ double integrate_to_infinite(Dfunc f, void *p)
       printf("[%s]: x=%f y(x)=%e\n", __FUNCTION__, x, y);
     }
 
-    //    dy = step_rk4a(f, x, p, &dx);
-    dy = step_rk4(f, x, p, dx);
+    dy = step_rk4a(f, x, p, &dx);
+    //    dy = step_rk4(f, x, p, dx);
     y += dy;
     x += dx;
 
@@ -174,8 +174,8 @@ double step_rk4(Dfunc f, double t, void *p, double dt)
 
 double esterr(Dfunc f, double t, void *p, double dt, double *dy)
 {
-  const double dy0 = step_rk4(f, t, p, dt*0.5); // y(t + dt/2)
-  const double dy_half = step_rk4(f, t, p, dt*0.5) + dy0;
+  const double dy0     = step_rk4(f, t+0.0*dt, p, dt*0.5); // y(t + dt/2)
+  const double dy_half = step_rk4(f, t+0.5*dt, p, dt*0.5) + dy0;
   const double dy_full = step_rk4(f, t, p, dt);
 
   if (dy != NULL) *dy = dy_half;
@@ -194,7 +194,7 @@ double step_rk4a(Dfunc f, double t, void *p, double *h)
 // control.
 // -----------------------------------------------------------------------------
 {
-  static double dt = 1.0; // won't matter
+  static double dt = 1.0; // won't matter what the initial value is
 
   while (esterr(f,t,p,dt,NULL) < INTEGRATE_ACC_GOAL) {
     dt *= 2.0;
