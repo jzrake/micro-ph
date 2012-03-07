@@ -23,14 +23,21 @@
  *------------------------------------------------------------------------------
  */
 
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 
 
+// External function declarations
+// -----------------------------------------------------------------------------
 double rootfind_secant(double (*f)(double, void*), void *p);
 double integrate_to_infinite(double (*f)(double t, double y));
 
+const int mphElectrons   =  (1 << 0); // option flags
+const int mphPositrons   =  (1 << 1);
+const int mphNeutrinos   =  (1 << 2);
+const int mphPhotons     =  (1 << 3);
 
 struct ThermalState
 {
@@ -44,10 +51,7 @@ struct ThermalState
   double u;        // internal energy (MeV/fm^3)
 };
 
-const int mphElectrons   =  (1 << 0);
-const int mphPositrons   =  (1 << 1);
-const int mphNeutrinos   =  (1 << 2);
-const int mphPhotons     =  (1 << 3);
+
 
 static const double LIGHT_SPEED      = 2.997924580e+10; // cm/s
 static const double HBAR_C           = 1.973269718e+02; // MeV-fm
@@ -56,33 +60,10 @@ static const double ATOMIC_MASS_UNIT = 9.314940612e+02; // MeV
 static const double MEV_TO_ERG       = 1.602176487e-06;
 static const double FM3_TO_CM3       = 1.000000000e-39;
 
-
 static double  EtaValue = 1.0; // mu/kT     ... degeneracy parameter
 static double BetaValue = 1.0; // me c^2/kT ... unitless inverse temperature
 
 
-
-double step_rk4(double (*f)(double t, double y), double t, double y, double dt)
-// -----------------------------------------------------------------------------
-// Take a 4th-order Runge-Kutta step for ODE integration, returns dy.
-//
-// http://en.wikipedia.org/wiki/Runge-Kutta_methods
-//
-// @inputs: (1) f(t,y) := y'(t)  function pointer
-//          (2) t                time (or independent variable)
-//          (3) y                solution value at time 't'
-//          (4) dt               step size
-//
-// @return: dt * y'(t)
-// -----------------------------------------------------------------------------
-{
-  const double k1 = dt * f(t, y);
-  const double k2 = dt * f(t + 0.5*dt, y + 0.5*k1);
-  const double k3 = dt * f(t + 0.5*dt, y + 0.5*k2);
-  const double k4 = dt * f(t + 1.0*dt, y + 1.0*k3);
-
-  return (1./6.)*(k1 + 2*k2 + 2*k3 + k4);
-}
 
 
 // -----------------------------------------------------------------------------
@@ -95,7 +76,6 @@ double step_rk4(double (*f)(double t, double y), double t, double y, double dt)
 // Volume ... pi^2 (h/mc)^3
 // Energy ... m c^2
 // -----------------------------------------------------------------------------
-
 
 // Number densities
 // -----------------------------------------------------------------------------
@@ -380,6 +360,15 @@ void microph_test_eta()
   printf("%+18.15e (%+18.15e)\n", f(1e1, 1.0),  7.316055681629137);
   printf("%+18.15e (%+18.15e)\n", f(1e2, 1.0), 75.47842301516384);
 
+  printf("\ntesting the rootfinder a bit harder\n");
+  printf(sep);
+  {
+    double eta = 1.0;
+    double beta = 1.0;
+    double C = evaluate_ne(beta, eta) - evaluate_np(beta, eta);
+    printf("relative error = %e\n", fabs(eta - f(beta, C)) / eta);
+  }
+
   f = solve_for_eta_neutrino;
   printf("\ntesting solution to chemical potential of neutrinos\n");
   printf(sep);
@@ -419,7 +408,7 @@ void microph_test_eos()
 
 int main()
 {
-  microph_test_npu();
+  //  microph_test_npu();
   microph_test_eta();
   //  microph_test_eos();
 
