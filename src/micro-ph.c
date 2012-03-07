@@ -247,8 +247,7 @@ double delation_eta_pairs(double eta, void *p) // its derivative
 double solve_for_eta_pairs(double beta, double C)
 {
   double p[2] = { beta, C };
-  //  return rootfind(relation_eta_pairs, delation_eta_pairs, p);
-  return rootfind(relation_eta_pairs, NULL, p);
+  return rootfind(relation_eta_pairs, delation_eta_pairs, p);
 }
 
 double relation_eta_neutrino(double eta, void *p)
@@ -493,8 +492,8 @@ int main(int argc, char **argv)
   }
 
   microph_test_npu();
-  //  microph_test_eta();
-  //  microph_test_eos();
+  microph_test_eta();
+  microph_test_eos();
 
   return 0;
 }
