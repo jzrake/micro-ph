@@ -12,12 +12,12 @@
  *
  *
  * REFERENCES:
- * 
+ *
  * (+) Sekiguchi (2010) http://arxiv.org/abs/1009.3320
  *
  *
  * NOTES:
- * 
+ *
  * (+) Throughout the code comments, the letter h means 'h bar'
  *
  *------------------------------------------------------------------------------
@@ -32,7 +32,10 @@
 // External function declarations
 // -----------------------------------------------------------------------------
 double rootfind_secant(double (*f)(double, void*), void *p);
+double rootfind_newton(double (*f)(double, void*), void *p);
+
 double integrate_to_infinite(double (*f)(double t, double y));
+void solvers_set_verbose(int v);
 
 const int mphElectrons   =  (1 << 0); // option flags
 const int mphPositrons   =  (1 << 1);
@@ -52,6 +55,7 @@ struct ThermalState
 };
 
 
+static double (*rootfind)(double (*f)(double, void*), void *p);
 
 static const double LIGHT_SPEED      = 2.997924580e+10; // cm/s
 static const double HBAR_C           = 1.973269718e+02; // MeV-fm
@@ -70,7 +74,7 @@ static double BetaValue = 1.0; // me c^2/kT ... unitless inverse temperature
 // These functions generate the integrand for the dimensionless number density,
 // pressure, and energy density of electrons and positrons according to
 // Sekiguchi (2010). The independent variable, x := p/mc^2.
-// 
+//
 //                               *** Units ***
 //
 // Volume ... pi^2 (h/mc)^3
@@ -119,7 +123,7 @@ double integrand_up_47(double x, double t)
 // These functions generate the integrand for the dimensionless number density,
 // pressure, and energy density of electrons and positrons assuming neutrinos
 // have zero mass. The independent variable, x := pc/kT.
-// 
+//
 //                               *** Units ***
 //
 // Volume ... pi^2 (hc/kT)^3
@@ -143,6 +147,7 @@ double integrand_neutrino_u(double x, double t)
 
 double evaluate_ne(double eta, double beta)
 {
+  printf("[%s]: eta = %f, beta = %f\n", __FUNCTION__, eta, beta);
   EtaValue = eta;
   BetaValue = beta;
   return integrate_to_infinite(integrand_ne_42);
@@ -153,7 +158,6 @@ double evaluate_np(double eta, double beta)
   BetaValue = beta;
   return integrate_to_infinite(integrand_np_45);
 }
-
 double evaluate_pe(double eta, double beta)
 {
   EtaValue = eta;
@@ -209,7 +213,7 @@ double relation_eta_pairs(double eta, void *p)
 double solve_for_eta_pairs(double beta, double C)
 {
   double p[2] = { beta, C };
-  return rootfind_secant(relation_eta_pairs, p);
+  return rootfind(relation_eta_pairs, p);
 }
 
 double relation_eta_neutrino(double eta, void *p)
@@ -226,7 +230,7 @@ double relation_eta_neutrino(double eta, void *p)
 double solve_for_eta_neutrino(double beta, double C)
 {
   double p[2] = { beta, C };
-  return rootfind_secant(relation_eta_neutrino, p);
+  return rootfind(relation_eta_neutrino, p);
 }
 
 
@@ -241,7 +245,7 @@ void microph_get_chemical_potential_pairs(struct ThermalState *S)
   printf("[%s]: beta = %f N = %f\n", __FUNCTION__, beta, N);
 
   double param[2] = { beta, N };
-  const double eta = rootfind_secant(relation_eta_pairs, param);
+  const double eta = rootfind(relation_eta_pairs, param);
   S->mu_ep = eta * S->kT;
 }
 
@@ -322,7 +326,7 @@ void microph_test_npu()
   printf("\ntesting number densities\n");
   printf(sep);
   const double T0[] = { 8.518609867257567, 0.21762355676095138, // true
-			4696.042780715451, 639.0164655753489 };
+                        4696.042780715451, 639.0164655753489 };
   printf("ne(1.0, 1.0) = %18.15e (%18.15e)\n", evaluate_ne(1.0, 1.0), T0[0]);
   printf("np(1.0, 1.0) = %18.15e (%18.15e)\n", evaluate_np(1.0, 1.0), T0[1]);
   printf("ne(1.0, 0.1) = %18.15e (%18.15e)\n", evaluate_ne(1.0, 0.1), T0[2]);
@@ -331,7 +335,7 @@ void microph_test_npu()
   printf("\ntesting pressures\n");
   printf(sep);
   const double T1[] = { 29.705257293987664, 0.6562580252817735,
-			157143.69494363826, 19535.555332427597 };
+                        157143.69494363826, 19535.555332427597 };
   printf("pe(1.0, 1.0) = %18.15e (%18.15e)\n", evaluate_pe(1.0, 1.0), T1[0]);
   printf("pp(1.0, 1.0) = %18.15e (%18.15e)\n", evaluate_pp(1.0, 1.0), T1[1]);
   printf("pe(1.0, 0.1) = %18.15e (%18.15e)\n", evaluate_pe(1.0, 0.1), T1[2]);
@@ -340,7 +344,7 @@ void microph_test_npu()
   printf("\ntesting internal energy densities\n");
   printf(sep);
   const double T2[] = { 23.909339652587427, 0.9540921687756961,
-			152640.37046113302, 20205.04623818944 };
+                        152640.37046113302, 20205.04623818944 };
   printf("pe(1.0, 1.0) = %18.15e (%18.15e)\n", evaluate_ue(1.0, 1.0), T2[0]);
   printf("pp(1.0, 1.0) = %18.15e (%18.15e)\n", evaluate_up(1.0, 1.0), T2[1]);
   printf("pe(1.0, 0.1) = %18.15e (%18.15e)\n", evaluate_ue(1.0, 0.1), T2[2]);
@@ -363,10 +367,18 @@ void microph_test_eta()
   printf("\ntesting the rootfinder a bit harder\n");
   printf(sep);
   {
-    double eta = 1.0;
-    double beta = 1.0;
-    double C = evaluate_ne(beta, eta) - evaluate_np(beta, eta);
-    printf("relative error = %e\n", fabs(eta - f(beta, C)) / eta);
+    double beta = 0.010;
+    double C0 = 10.0;
+    double eta = solve_for_eta_pairs(beta, C0);
+    double C1 = evaluate_ne(eta, beta) - evaluate_np(eta, beta);
+    printf("error = %e\n", (C0 - C1)/C0);
+  }
+  {
+    double beta = 0.10;
+    double C0 = 0.01;
+    double eta = solve_for_eta_pairs(beta, C0);
+    double C1 = evaluate_ne(eta, beta) - evaluate_np(eta, beta);
+    printf("error = %e\n", (C0 - C1)/C0);
   }
 
   f = solve_for_eta_neutrino;
@@ -387,14 +399,13 @@ void microph_test_eos()
   struct ThermalState *S = (struct ThermalState*)
     malloc(sizeof(struct ThermalState));
 
-  S->kT = 0.10;
+  S->kT = 40.0;
   S->Ye = 0.08;
-  S->density = 1e11;
-  S->mu_ep = 5.0;
+  S->density = 1e13;
 
   microph_get_chemical_potential_pairs(S);
   printf("Chemical potential of pairs = %e MeV (eta = %f)\n",
-	 S->mu_ep, S->mu_ep/S->kT);
+         S->mu_ep, S->mu_ep/S->kT);
 
   microph_get(S, mphElectrons);
   printf("Electron pressure = %e MeV/fm^3\n", S->p);
@@ -406,11 +417,35 @@ void microph_test_eos()
 }
 
 
-int main()
+
+
+#include <ctype.h>
+#include <getopt.h>
+
+int main(int argc, char **argv)
 {
+  rootfind = rootfind_newton;
+
+  int c;
+  while ((c = getopt(argc, argv, "vh")) != -1) {
+    switch (c) {
+    case 'v':
+      solvers_set_verbose(1);
+      break;
+    case 'h':
+      printf("usage: micro-ph [-v]\n");
+      return 1;
+    case '?':
+      printf("usage: micro-ph [-v]\n");
+      return 1;
+    default:
+      abort();
+    }
+  }
+
   //  microph_test_npu();
-  microph_test_eta();
-  //  microph_test_eos();
+  //  microph_test_eta();
+  microph_test_eos();
 
   return 0;
 }
