@@ -73,7 +73,7 @@ static double BetaValue = 1.0; // me c^2/kT ... unitless inverse temperature
 // -----------------------------------------------------------------------------
 // These functions generate the integrand for the dimensionless number density,
 // pressure, and energy density of electrons and positrons according to
-// Sekiguchi (2010). The independent variable, x := p/mc^2.
+// Sekiguchi (2010). The independent variable, x := pc/mc^2.
 //
 //                               *** Units ***
 //
