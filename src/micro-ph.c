@@ -23,6 +23,7 @@
  *------------------------------------------------------------------------------
  */
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 
@@ -43,17 +44,19 @@ const int mphPositrons   =  (1 << 1);
 const int mphNeutrinos   =  (1 << 2);
 const int mphPhotons     =  (1 << 3);
 
-
+static const double LIGHT_SPEED      = 2.997924580e+10; // cm/s
 static const double HBAR_C           = 1.973269718e+02; // MeV-fm
 static const double ELECTRON_MASS    = 5.110998928e-01; // MeV
 static const double ATOMIC_MASS_UNIT = 9.314940612e+02; // MeV
+static const double MEV_TO_ERG       = 1.602176487e-06;
+static const double FM3_TO_CM3       = 1.000000000e-39;
 
 static int    MAX_INTEGRAL_ITER    = 1000000;
 static double INTEGRATE_STEP_SIZE  = 1e-2;
 static double ZERO_SLOPE_REACHED   = 1e-10;
 static int    ZERO_SLOPE_REPEATED  = 10;
 static double ZERO_SECANT_REACHED  = 1e-12;
-static int    MAX_SECANT_ITER      = 50;
+static int    MAX_SECANT_ITER      = 500;
 
 
 static double  EtaValue = 1.0; // mu/kT     ... degeneracy parameter
@@ -252,48 +255,28 @@ double evaluate_neutrino_u(double eta)
 }
 
 
-
-double solve_for_eta_pairs(double beta, double C)
+double relation_eta_pairs(double eta, double beta, double C)
 // -----------------------------------------------------------------------------
-// Solves the implicit equation ne(e,b) - np(e,b) = C for e := eta, where C is a
-// constant, typically the total number of positive charges in the
-// characteristic volume V0 := pi^2 (h/mc)^3.
+// Defines the implicit equation ne(e,b) - np(e,b) = C for e := eta, where C is
+// a dimensionless constant, typically the total number of positive charges in
+// the characteristic volume V0 := pi^2 (h/mc)^3.
 // -----------------------------------------------------------------------------
 {
-  int niter = 0;
-  double eta0 = -1.0; // starting guess values sandwich the root if possible
-  double eta1 = +1.0;
-  double eta2;
-
-  while (1) {
-
-    double f0 = evaluate_ne(eta0, beta) - evaluate_np(eta0, beta) - C;
-    double f1 = evaluate_ne(eta1, beta) - evaluate_np(eta1, beta) - C;
-
-    eta2 = eta1 - f1 * (eta1 - eta0) / (f1 - f0);
-    eta0 = eta1;
-    eta1 = eta2;
-
-    if (fabs(f1) < ZERO_SECANT_REACHED) {
-      break;
-    }
-    else if (++niter == MAX_SECANT_ITER) {
-      printf("[%s]: warning! convergence took too many iterations\n",
-	     __FUNCTION__);
-      break;
-    }
-  }
-
-  return eta2;
+  return evaluate_ne(eta, beta) - evaluate_np(eta, beta) - C;
 }
-
-double solve_for_eta_neutrino(double beta, double C)
+double relation_eta_neutrino(double eta, double beta, double C)
 // -----------------------------------------------------------------------------
-// Solves the implicit equation n(e,b) = C for e := eta, where C is a constant,
+// Defines the implicit equation n(e,b) = C for e := eta, where C is a constant,
 // typically the total neutrino number of a particular species in the
 // characteristic volume V0 := pi^2 (h/mc)^3.
 // -----------------------------------------------------------------------------
 {
+  return evaluate_ne(eta, beta) - C; // equation S2010-4.9
+}
+
+
+double rootfind_secant(double (*f)(double eta, double beta, double C), double beta, double C)
+{
   int niter = 0;
   double eta0 = -1.0; // starting guess values sandwich the root if possible
   double eta1 = +1.0;
@@ -301,8 +284,8 @@ double solve_for_eta_neutrino(double beta, double C)
 
   while (1) {
 
-    double f0 = evaluate_ne(eta0, beta) - C; // equation S2010-4.9
-    double f1 = evaluate_ne(eta1, beta) - C;
+    double f0 = f(eta0, beta, C);
+    double f1 = f(eta1, beta, C);
 
     eta2 = eta1 - f1 * (eta1 - eta0) / (f1 - f0);
     eta0 = eta1;
@@ -317,9 +300,25 @@ double solve_for_eta_neutrino(double beta, double C)
       break;
     }
   }
-
+  printf("[%s]: converged in %d iterations\n", __FUNCTION__, niter);
   return eta2;
 }
+
+
+void microph_get_chemical_potential_pairs(struct ThermalState *S)
+{
+  const double c2 = LIGHT_SPEED*LIGHT_SPEED;
+  const double Vol = pow(M_PI, 2) * pow(HBAR_C/ELECTRON_MASS, 3);
+  const double Erest = S->density * c2 * FM3_TO_CM3 / MEV_TO_ERG;
+  const double N = Vol * S->Ye * Erest / ATOMIC_MASS_UNIT;
+  const double beta = ELECTRON_MASS / S->kT;
+
+  printf("[%s]: beta = %f N = %f\n", __FUNCTION__, beta, N);
+
+  const double eta = rootfind_secant(relation_eta_pairs, beta, N);
+  S->mu_ep = eta * S->kT;
+}
+
 
 void microph_get(struct ThermalState *S, int flags)
 // -----------------------------------------------------------------------------
@@ -426,21 +425,21 @@ void microph_test_npu()
 void microph_test_eta()
 {
   const char *sep = "**************************************************\n";
-  double (*f)(double, double);
+  double (*f)(double, double, double);
 
-  f = solve_for_eta_pairs;
+  f = relation_eta_pairs;
   printf("\ntesting solution to chemical potential of pairs\n");
   printf(sep);
-  printf("%+18.15e (%+18.15e)\n", f(1e0, 1.0), -0.6525037133686798);
-  printf("%+18.15e (%+18.15e)\n", f(1e1, 1.0),  7.316055681629137);
-  printf("%+18.15e (%+18.15e)\n", f(1e2, 1.0), 75.47842301516384);
+  printf("%+18.15e (%+18.15e)\n", rootfind_secant(f, 1e0, 1.0), -0.6525037133686798);
+  printf("%+18.15e (%+18.15e)\n", rootfind_secant(f, 1e1, 1.0),  7.316055681629137);
+  printf("%+18.15e (%+18.15e)\n", rootfind_secant(f, 1e2, 1.0), 75.47842301516384);
 
-  f = solve_for_eta_neutrino;
+  f = relation_eta_neutrino;
   printf("\ntesting solution to chemical potential of neutrinos\n");
   printf(sep);
-  printf("%+18.15e\n", f(1e-1, 1.0));
-  printf("%+18.15e\n", f(1e+0, 1.0));
-  printf("%+18.15e\n", f(1e+1, 1.0));
+  printf("%+18.15e\n", rootfind_secant(f, 1e-1, 1.0));
+  printf("%+18.15e\n", rootfind_secant(f, 1e+0, 1.0));
+  printf("%+18.15e\n", rootfind_secant(f, 1e+1, 1.0));
 }
 
 
@@ -450,16 +449,25 @@ void microph_test_eos()
   printf("\ntesting pressure contributions from various terms\n");
   printf(sep);
 
-  struct ThermalState S;
+  struct ThermalState *S = (struct ThermalState*)
+    malloc(sizeof(struct ThermalState));
 
-  S.kT = 10.0;
-  S.mu_ep = 5.0;
+  S->kT = 0.10;
+  S->Ye = 0.08;
+  S->density = 1e11;
+  S->mu_ep = 5.0;
 
-  microph_get(&S, mphElectrons);
-  printf("Electron pressure = %e MeV/fm^3\n", S.p);
+  microph_get_chemical_potential_pairs(S);
+  printf("Chemical potential of pairs = %e MeV (eta = %f)\n",
+	 S->mu_ep, S->mu_ep/S->kT);
 
-  microph_get(&S, mphPositrons);
-  printf("Positron pressure = %e MeV/fm^3\n", S.p);
+  microph_get(S, mphElectrons);
+  printf("Electron pressure = %e MeV/fm^3\n", S->p);
+
+  microph_get(S, mphPositrons);
+  printf("Positron pressure = %e MeV/fm^3\n", S->p);
+
+  free(S);
 }
 
 
@@ -467,7 +475,7 @@ int main()
 {
   microph_test_npu();
   microph_test_eta();
-  microph_test_eos();
+  //  microph_test_eos();
 
   return 0;
 }
