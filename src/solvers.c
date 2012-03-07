@@ -13,8 +13,13 @@ static const int    ZERO_SLOPE_REPEATED  = 10;
 static const double ZERO_SECANT_REACHED  = 1e-6;
 static const int    MAX_SECANT_ITER      = 500;
 
-double integrate_to_infinite(double (*f)(double t, void *p), void *p);
-typedef double (*Dfunc)(double t, void *p); // derivative function
+
+
+typedef double (*Dfunc)(double t, void *p);
+double rootfind_secant(Dfunc f, Dfunc g, void *p);
+double rootfind_newton(Dfunc f, Dfunc g, void *p);
+double integrate_to_infinite(Dfunc f, void *p);
+
 
 static double step_rk4 (Dfunc f, double t, void *p, double dt);
 static double step_rk4a(Dfunc f, double t, void *p, double *h);
@@ -25,7 +30,7 @@ void solvers_set_verbose(int v)
   verbose = v;
 }
 
-double rootfind_secant(double (*f)(double, void*), void *p)
+double rootfind_secant(Dfunc f, Dfunc g, void *p)
 {
   int niter = 0;
   double x0 = -0.01; // starting guess values sandwich the root if possible
@@ -66,7 +71,7 @@ double rootfind_secant(double (*f)(double, void*), void *p)
   return x2;
 }
 
-double rootfind_newton(double (*f)(double, void*), void *p)
+double rootfind_newton(Dfunc f, Dfunc g, void *p)
 {
   int niter = 0;
   double dx = 1e-8;
@@ -74,8 +79,8 @@ double rootfind_newton(double (*f)(double, void*), void *p)
 
   while (1) {
 
-    double f0 =  f(x, p);
-    double g0 = (f(x+0.5*dx, p) - f(x-0.5*dx, p))/dx;
+    double f0 = f(x, p);
+    double g0 = g ? g(x, p) : (f(x+0.5*dx, p) - f(x-0.5*dx, p))/dx;
 
     if (verbose >= 1) {
       printf("[%s]: f(%f) = %e\n", __FUNCTION__, x, f0);
@@ -121,7 +126,6 @@ double integrate_to_infinite(Dfunc f, void *p)
     }
 
     dy = step_rk4a(f, x, p, &dx);
-    //    dy = step_rk4(f, x, p, dx);
     y += dy;
     x += dx;
 

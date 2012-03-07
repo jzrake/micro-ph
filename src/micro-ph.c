@@ -31,11 +31,12 @@
 
 // External function declarations
 // -----------------------------------------------------------------------------
-double rootfind_secant(double (*f)(double, void*), void *p);
-double rootfind_newton(double (*f)(double, void*), void *p);
+typedef double (*Dfunc)(double t, void *p);
+double rootfind_secant(Dfunc f, Dfunc g, void *p);
+double rootfind_newton(Dfunc f, Dfunc g, void *p);
+double integrate_to_infinite(Dfunc f, void *p);
 
 
-double integrate_to_infinite(double (*f)(double t, void *p), void *p);
 void solvers_set_verbose(int v);
 
 const int mphElectrons   =  (1 << 0); // option flags
@@ -56,7 +57,7 @@ struct ThermalState
 };
 
 
-static double (*rootfind)(double (*f)(double, void*), void *p);
+static double (*rootfind)(Dfunc f, Dfunc g, void *p);
 
 static const double LIGHT_SPEED      = 2.997924580e+10; // cm/s
 static const double HBAR_C           = 1.973269718e+02; // MeV-fm
@@ -223,7 +224,7 @@ double relation_eta_pairs(double eta, void *p)
 double solve_for_eta_pairs(double beta, double C)
 {
   double p[2] = { beta, C };
-  return rootfind(relation_eta_pairs, p);
+  return rootfind(relation_eta_pairs, NULL, p);
 }
 
 double relation_eta_neutrino(double eta, void *p)
@@ -240,7 +241,7 @@ double relation_eta_neutrino(double eta, void *p)
 double solve_for_eta_neutrino(double beta, double C)
 {
   double p[2] = { beta, C };
-  return rootfind(relation_eta_neutrino, p);
+  return rootfind(relation_eta_neutrino, NULL, p);
 }
 
 
@@ -255,7 +256,7 @@ void microph_get_chemical_potential_pairs(struct ThermalState *S)
   printf("[%s]: beta = %f N = %f\n", __FUNCTION__, beta, N);
 
   double param[2] = { beta, N };
-  const double eta = rootfind(relation_eta_pairs, param);
+  const double eta = rootfind(relation_eta_pairs, NULL, param);
   S->mu_ep = eta * S->kT;
 }
 
