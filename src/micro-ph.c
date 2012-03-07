@@ -34,7 +34,8 @@
 double rootfind_secant(double (*f)(double, void*), void *p);
 double rootfind_newton(double (*f)(double, void*), void *p);
 
-double integrate_to_infinite(double (*f)(double t, double y));
+
+double integrate_to_infinite(double (*f)(double t, void *p), void *p);
 void solvers_set_verbose(int v);
 
 const int mphElectrons   =  (1 << 0); // option flags
@@ -64,138 +65,147 @@ static const double ATOMIC_MASS_UNIT = 9.314940612e+02; // MeV
 static const double MEV_TO_ERG       = 1.602176487e-06;
 static const double FM3_TO_CM3       = 1.000000000e-39;
 
-static double  EtaValue = 1.0; // mu/kT     ... degeneracy parameter
-static double BetaValue = 1.0; // me c^2/kT ... unitless inverse temperature
 
-
-
-
+double pdf_fermion(double x, void *p)
 // -----------------------------------------------------------------------------
-// These functions generate the integrand for the dimensionless number density,
-// pressure, and energy density of electrons and positrons according to
-// Sekiguchi (2010). The independent variable, x := pc/mc^2.
+// x     := pc/mc^2   ... independent variable
+// eta   := mu/kT     ... degeneracy parameter
+// beta  := mc^2/kT   ... unitless inverse temperature
 //
-//                               *** Units ***
+//                    *** Units ***
 //
-// Volume ... pi^2 (h/mc)^3
-// Energy ... m c^2
+// Volume             ... pi^2 (h/mc)^3
+// Energy             ... m c^2
 // -----------------------------------------------------------------------------
-
-// Number densities
+{
+  const double sgn  = ((double*)p)[0]; // (-) for anti-fermions
+  const double eta  = ((double*)p)[1];
+  const double beta = ((double*)p)[2];
+  return (x*x) / (exp(beta * (sqrt(1 + x*x) - sgn) - sgn*eta) + 1);
+}
+double pdf_fermion_deriv(double x, void *p)
 // -----------------------------------------------------------------------------
-double integrand_ne_42(double x, double t)
-{
-  return (x*x) / (exp(BetaValue * (sqrt(1 + x*x) - 1) - EtaValue) + 1);
-}
-double integrand_np_45(double x, double t)
-{
-  return (x*x) / (exp(BetaValue * (sqrt(1 + x*x) + 1) + EtaValue) + 1);
-}
-
-// Pressure
+// The derivative with respect to chemical potential.
 // -----------------------------------------------------------------------------
-double integrand_pe_43(double x, double t)
 {
-  const double numer = pow(x,4) / sqrt(1 + x*x);
-  return numer / (exp(BetaValue * (sqrt(1 + x*x) - 1) - EtaValue) + 1);
+  const double sgn  = ((double*)p)[0]; // (-) for anti-fermions
+  const double eta  = ((double*)p)[1];
+  const double beta = ((double*)p)[2];
+  return 0.5 * sgn * (x*x) / (1 + cosh(beta*sqrt(1 + x*x) - sgn*(beta + eta)));
 }
-double integrand_pp_46(double x, double t)
+double ferm_number_density(double x, void *p)  { return 1.0; }
+double ferm_pressure(double x, void *p) { return pow(x,2) / (sqrt(1 + x*x)); }
+double ferm_internal_energy(double x, void *p)
 {
-  const double numer = pow(x,4) / sqrt(1 + x*x);
-  return numer / (exp(BetaValue * (sqrt(1 + x*x) + 1) + EtaValue) + 1);
-}
-
-// Internal energy density
-// -----------------------------------------------------------------------------
-double integrand_ue_44(double x, double t)
-{
-  const double numer = pow(x,2) * (sqrt(1 + x*x) - 1);
-  return numer / (exp(BetaValue * (sqrt(1 + x*x) - 1) - EtaValue) + 1);
-}
-double integrand_up_47(double x, double t)
-{
-  const double numer = pow(x,2) * (sqrt(1 + x*x) + 1);
-  return numer / (exp(BetaValue * (sqrt(1 + x*x) + 1) + EtaValue) + 1);
+  const double sgn = ((double*)p)[0];
+  return sqrt(1 + x*x) - sgn*1;
 }
 
 
+double pdf_fermion_massless(double x, void *p)
 // -----------------------------------------------------------------------------
-// These functions generate the integrand for the dimensionless number density,
-// pressure, and energy density of electrons and positrons assuming neutrinos
-// have zero mass. The independent variable, x := pc/kT.
+// x     := pc/kT     ... independent variable
+// eta   := mu/kT     ... degeneracy parameter
 //
-//                               *** Units ***
+//                    *** Units ***
 //
-// Volume ... pi^2 (hc/kT)^3
-// Energy ... kT
+// Volume             ... pi^2 (hc/kT)^3
+// Energy             ... kT
 // -----------------------------------------------------------------------------
-double integrand_neutrino_n(double x, double t)
 {
-  return (x*x) / (exp(x - EtaValue) + 1);
+  const double sgn  = ((double*)p)[0]; // (-) for anti-fermions
+  const double eta  = ((double*)p)[1];
+  return (x*x) / (exp(x - sgn*eta) + 1);
 }
-double integrand_neutrino_p(double x, double t)
+double pdf_fermion_massless_deriv(double x, void *p)
+// -----------------------------------------------------------------------------
+// The derivative with respect to chemical potential.
+// -----------------------------------------------------------------------------
 {
-  return (x*x*x) / (exp(x - EtaValue) + 1);
+  const double sgn  = ((double*)p)[0]; // (-) for anti-fermions
+  const double eta  = ((double*)p)[1];
+  return 0.5 * sgn * (x*x) / (1 + cosh(x - sgn*eta));
 }
-double integrand_neutrino_u(double x, double t)
-{
-  return (x*x*x) / (exp(x - EtaValue) + 1);
-}
+double fmml_number_density(double x, void *p)  { return 1.0; }
+double fmml_pressure(double x, void *p)        { return x; }
+double fmml_internal_energy(double x, void *p) { return x; }
 
 
 
+double integrand_n(double x, void *p)
+{
+  return pdf_fermion(x,p) * ferm_number_density(x,p);
+}
+double integrand_p(double x, void *p)
+{
+  return pdf_fermion(x,p) * ferm_pressure(x,p);
+}
+double integrand_u(double x, void *p)
+{
+  return pdf_fermion(x,p) * ferm_internal_energy(x,p);
+}
+
+double integrand_n_massless(double x, void *p)
+{
+  return pdf_fermion_massless(x,p) * ferm_number_density(x,p);
+}
+double integrand_p_massless(double x, void *p)
+{
+  return pdf_fermion_massless(x,p) * ferm_pressure(x,p);
+}
+double integrand_u_massless(double x, void *p)
+{
+  return pdf_fermion_massless(x,p) * ferm_internal_energy(x,p);
+}
 
 double evaluate_ne(double eta, double beta)
 {
-  //  printf("[%s]: eta = %f, beta = %f\n", __FUNCTION__, eta, beta);
-  EtaValue = eta;
-  BetaValue = beta;
-  return integrate_to_infinite(integrand_ne_42);
+  double p[3] = { +1, eta, beta };
+  return integrate_to_infinite(integrand_n, p);
 }
 double evaluate_np(double eta, double beta)
 {
-  EtaValue = eta;
-  BetaValue = beta;
-  return integrate_to_infinite(integrand_np_45);
+  double p[3] = { -1, eta, beta };
+  return integrate_to_infinite(integrand_n, p);
 }
+
 double evaluate_pe(double eta, double beta)
 {
-  EtaValue = eta;
-  BetaValue = beta;
-  return integrate_to_infinite(integrand_pe_43);
+  double p[3] = { +1, eta, beta };
+  return integrate_to_infinite(integrand_p, p);
 }
 double evaluate_pp(double eta, double beta)
 {
-  EtaValue = eta;
-  BetaValue = beta;
-  return integrate_to_infinite(integrand_pp_46);
+  double p[3] = { -1, eta, beta };
+  return integrate_to_infinite(integrand_p, p);
 }
+
 double evaluate_ue(double eta, double beta)
 {
-  EtaValue = eta;
-  BetaValue = beta;
-  return integrate_to_infinite(integrand_ue_44);
+  double p[3] = { +1, eta, beta };
+  return integrate_to_infinite(integrand_u, p);
 }
 double evaluate_up(double eta, double beta)
 {
-  EtaValue = eta;
-  BetaValue = beta;
-  return integrate_to_infinite(integrand_up_47);
+  double p[3] = { -1, eta, beta };
+  return integrate_to_infinite(integrand_u, p);
 }
+
+
 double evaluate_neutrino_n(double eta)
 {
-  EtaValue = eta;
-  return integrate_to_infinite(integrand_neutrino_n);
+  double p[2] = { +1, eta };
+  return integrate_to_infinite(integrand_n_massless, p);
 }
 double evaluate_neutrino_p(double eta)
 {
-  EtaValue = eta;
-  return integrate_to_infinite(integrand_neutrino_p);
+  double p[2] = { +1, eta };
+  return integrate_to_infinite(integrand_p_massless, p);
 }
 double evaluate_neutrino_u(double eta)
 {
-  EtaValue = eta;
-  return integrate_to_infinite(integrand_neutrino_u);
+  double p[2] = { +1, eta };
+  return integrate_to_infinite(integrand_u_massless, p);
 }
 
 
@@ -427,10 +437,11 @@ int main(int argc, char **argv)
   rootfind = rootfind_newton;
 
   int c;
-  while ((c = getopt(argc, argv, "vh")) != -1) {
+  while ((c = getopt(argc, argv, "v:h")) != -1) {
     switch (c) {
     case 'v':
-      solvers_set_verbose(1);
+      printf("using verbose level %s\n", optarg);
+      solvers_set_verbose(atoi(optarg));
       break;
     case 'h':
       printf("usage: micro-ph [-v]\n");
@@ -444,8 +455,8 @@ int main(int argc, char **argv)
   }
 
   microph_test_npu();
-  microph_test_eta();
-  microph_test_eos();
+  //  microph_test_eta();
+  //  microph_test_eos();
 
   return 0;
 }
