@@ -27,6 +27,11 @@
 #include <stdio.h>
 #include <math.h>
 
+
+double rootfind_secant(double (*f)(double, void*), void *p);
+double integrate_to_infinite(double (*f)(double t, double y));
+
+
 struct ThermalState
 {
   double density;  // baryon mass density (g/cm^3)
@@ -50,13 +55,6 @@ static const double ELECTRON_MASS    = 5.110998928e-01; // MeV
 static const double ATOMIC_MASS_UNIT = 9.314940612e+02; // MeV
 static const double MEV_TO_ERG       = 1.602176487e-06;
 static const double FM3_TO_CM3       = 1.000000000e-39;
-
-static int    MAX_INTEGRAL_ITER    = 1000000;
-static double INTEGRATE_STEP_SIZE  = 1e-2;
-static double ZERO_SLOPE_REACHED   = 1e-10;
-static int    ZERO_SLOPE_REPEATED  = 10;
-static double ZERO_SECANT_REACHED  = 1e-12;
-static int    MAX_SECANT_ITER      = 500;
 
 
 static double  EtaValue = 1.0; // mu/kT     ... degeneracy parameter
@@ -161,44 +159,6 @@ double integrand_neutrino_u(double x, double t)
 }
 
 
-double integrate_to_infinite(double (*f)(double t, double y))
-// -----------------------------------------------------------------------------
-// Calls the RK4 routine to integrate the function 'f' until its value is no
-// longer changing. Typical algorithm parameters are ZERO_SLOPE_REACHED = 1e-10,
-// ZERO_SLOPE_REPEATED = 10, and INTEGRATE_STEP_SIZE = 1e-2.
-// -----------------------------------------------------------------------------
-{
-  int n_zero_slope = 0, niter = 0;
-  double dx = INTEGRATE_STEP_SIZE;
-  double dy = dx;
-  double x = 0.0;
-  double y = 0.0;
-
-  while (1) {
-
-    dy = step_rk4(f, x, y, dx);
-    y += dy;
-    x += dx;
-
-    if (fabs(dy/dx) < ZERO_SLOPE_REACHED) {
-      n_zero_slope += 1;
-    }
-    else {
-      n_zero_slope = 0;
-    }
-    if (n_zero_slope == ZERO_SLOPE_REPEATED) {
-      break;
-    }
-    else if (++niter == MAX_INTEGRAL_ITER) {
-      printf("[%s]: warning! convergence took too many iterations\n",
-	     __FUNCTION__);
-      break;
-    }
-  }
-
-  return y;
-}
-
 
 
 double evaluate_ne(double eta, double beta)
@@ -255,53 +215,38 @@ double evaluate_neutrino_u(double eta)
 }
 
 
-double relation_eta_pairs(double eta, double beta, double C)
+double relation_eta_pairs(double eta, void *p)
 // -----------------------------------------------------------------------------
 // Defines the implicit equation ne(e,b) - np(e,b) = C for e := eta, where C is
 // a dimensionless constant, typically the total number of positive charges in
 // the characteristic volume V0 := pi^2 (h/mc)^3.
 // -----------------------------------------------------------------------------
 {
+  const double beta = ((double*)p)[0];
+  const double C    = ((double*)p)[1];
   return evaluate_ne(eta, beta) - evaluate_np(eta, beta) - C;
 }
-double relation_eta_neutrino(double eta, double beta, double C)
+double solve_for_eta_pairs(double beta, double C)
+{
+  double p[2] = { beta, C };
+  return rootfind_secant(relation_eta_pairs, p);
+}
+
+double relation_eta_neutrino(double eta, void *p)
 // -----------------------------------------------------------------------------
 // Defines the implicit equation n(e,b) = C for e := eta, where C is a constant,
 // typically the total neutrino number of a particular species in the
 // characteristic volume V0 := pi^2 (h/mc)^3.
 // -----------------------------------------------------------------------------
 {
+  const double beta = ((double*)p)[0];
+  const double C    = ((double*)p)[1];
   return evaluate_ne(eta, beta) - C; // equation S2010-4.9
 }
-
-
-double rootfind_secant(double (*f)(double eta, double beta, double C), double beta, double C)
+double solve_for_eta_neutrino(double beta, double C)
 {
-  int niter = 0;
-  double eta0 = -1.0; // starting guess values sandwich the root if possible
-  double eta1 = +1.0;
-  double eta2;
-
-  while (1) {
-
-    double f0 = f(eta0, beta, C);
-    double f1 = f(eta1, beta, C);
-
-    eta2 = eta1 - f1 * (eta1 - eta0) / (f1 - f0);
-    eta0 = eta1;
-    eta1 = eta2;
-
-    if (fabs(f1) < ZERO_SECANT_REACHED) {
-      break;
-    }
-    else if (++niter == MAX_SECANT_ITER) {
-      printf("[%s]: warning! convergence took too many iterations\n",
-	     __FUNCTION__);
-      break;
-    }
-  }
-  printf("[%s]: converged in %d iterations\n", __FUNCTION__, niter);
-  return eta2;
+  double p[2] = { beta, C };
+  return rootfind_secant(relation_eta_neutrino, p);
 }
 
 
@@ -315,7 +260,8 @@ void microph_get_chemical_potential_pairs(struct ThermalState *S)
 
   printf("[%s]: beta = %f N = %f\n", __FUNCTION__, beta, N);
 
-  const double eta = rootfind_secant(relation_eta_pairs, beta, N);
+  double param[2] = { beta, N };
+  const double eta = rootfind_secant(relation_eta_pairs, param);
   S->mu_ep = eta * S->kT;
 }
 
@@ -425,21 +371,21 @@ void microph_test_npu()
 void microph_test_eta()
 {
   const char *sep = "**************************************************\n";
-  double (*f)(double, double, double);
+  double (*f)(double, double);
 
-  f = relation_eta_pairs;
+  f = solve_for_eta_pairs;
   printf("\ntesting solution to chemical potential of pairs\n");
   printf(sep);
-  printf("%+18.15e (%+18.15e)\n", rootfind_secant(f, 1e0, 1.0), -0.6525037133686798);
-  printf("%+18.15e (%+18.15e)\n", rootfind_secant(f, 1e1, 1.0),  7.316055681629137);
-  printf("%+18.15e (%+18.15e)\n", rootfind_secant(f, 1e2, 1.0), 75.47842301516384);
+  printf("%+18.15e (%+18.15e)\n", f(1e0, 1.0), -0.6525037133686798);
+  printf("%+18.15e (%+18.15e)\n", f(1e1, 1.0),  7.316055681629137);
+  printf("%+18.15e (%+18.15e)\n", f(1e2, 1.0), 75.47842301516384);
 
-  f = relation_eta_neutrino;
+  f = solve_for_eta_neutrino;
   printf("\ntesting solution to chemical potential of neutrinos\n");
   printf(sep);
-  printf("%+18.15e\n", rootfind_secant(f, 1e-1, 1.0));
-  printf("%+18.15e\n", rootfind_secant(f, 1e+0, 1.0));
-  printf("%+18.15e\n", rootfind_secant(f, 1e+1, 1.0));
+  printf("%+18.15e\n", f(1e-1, 1.0));
+  printf("%+18.15e\n", f(1e+0, 1.0));
+  printf("%+18.15e\n", f(1e+1, 1.0));
 }
 
 

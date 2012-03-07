@@ -8,11 +8,9 @@ default : $(EXE)
 %.o : %.c
 	$(CC) $(CFLAGS) -c $<
 
-$(BIN) : 
-	mkdir $(BIN)
-
-$(EXE) : micro-ph.o $(BIN)
-	$(CC) $(CFLAGS) -o $@ $<
+$(EXE) : micro-ph.o solvers.o
+	@mkdir -p $(BIN)
+	$(CC) $(CFLAGS) -o $@ $^
 
 clean :
 	rm -f *.o
