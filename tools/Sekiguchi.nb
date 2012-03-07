@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       157,          7]
-NotebookDataLength[     37828,       1030]
-NotebookOptionsPosition[     36020,        966]
-NotebookOutlinePosition[     36378,        982]
-CellTagsIndexPosition[     36335,        979]
+NotebookDataLength[     37833,       1030]
+NotebookOptionsPosition[     36025,        966]
+NotebookOutlinePosition[     36383,        982]
+CellTagsIndexPosition[     36340,        979]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -838,15 +838,15 @@ Cell[BoxData[
         Typeset`animator$$, Typeset`animvar$$, Typeset`name$$, 
         Typeset`specs$$, Typeset`size$$, Typeset`update$$, Typeset`initDone$$,
          Typeset`skipInitDone$$}, "Body" :> 
-      Plot[$CellContext`s$$ $CellContext`x^2/(2 + 
-        2 Cosh[(1 + $CellContext`x^2)^
-             Rational[
-              1, 2] $CellContext`\[Beta]$$ - $CellContext`s$$ ($CellContext`\
-\[Beta]$$ + $CellContext`\[Eta]$$)]), {$CellContext`x, 0, 1000}], 
+      Plot[$CellContext`s$$ ($CellContext`x^2/(2 + 
+         2 Cosh[(1 + $CellContext`x^2)^
+              Rational[
+               1, 2] $CellContext`\[Beta]$$ - $CellContext`s$$ ($CellContext`\
+\[Beta]$$ + $CellContext`\[Eta]$$)])), {$CellContext`x, 0, 1000}], 
       "Specifications" :> {{$CellContext`s$$, {-1, 
          1}}, {$CellContext`\[Beta]$$, 0, 10}, {$CellContext`\[Eta]$$, -5, 
          5}}, "Options" :> {}, "DefaultOptions" :> {}],
-     ImageSizeCache->{403., {182., 188.}},
+     ImageSizeCache->{403., {169., 175.}},
      SingleEvaluation->True],
     Deinitialization:>None,
     DynamicModuleValues:>{},
@@ -1001,7 +1001,7 @@ Cell[19125, 496, 501, 7, 30, "Output"]
 }, Open  ]],
 Cell[CellGroupData[{
 Cell[19663, 508, 406, 10, 27, "Input"],
-Cell[20072, 520, 716, 20, 45, "Output"]
+Cell[20072, 520, 716, 20, 33, "Output"]
 }, Open  ]],
 Cell[CellGroupData[{
 Cell[20825, 545, 360, 11, 53, "Input"],
@@ -1020,17 +1020,17 @@ Cell[28825, 764, 352, 10, 52, "Output"]
 }, Open  ]],
 Cell[CellGroupData[{
 Cell[29214, 779, 1079, 32, 64, "Input"],
-Cell[30296, 813, 2378, 47, 387, "Output"]
+Cell[30296, 813, 2383, 47, 361, "Output"]
 }, Open  ]],
-Cell[32689, 863, 595, 19, 64, "Input"],
+Cell[32694, 863, 595, 19, 64, "Input"],
 Cell[CellGroupData[{
-Cell[33309, 886, 1535, 40, 73, "Input"],
-Cell[34847, 928, 560, 16, 45, "Output"]
+Cell[33314, 886, 1535, 40, 73, "Input"],
+Cell[34852, 928, 560, 16, 33, "Output"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[35444, 949, 307, 7, 43, "Input"],
-Cell[35754, 958, 115, 1, 27, "Output"],
-Cell[35872, 961, 132, 2, 27, "Output"]
+Cell[35449, 949, 307, 7, 43, "Input"],
+Cell[35759, 958, 115, 1, 27, "Output"],
+Cell[35877, 961, 132, 2, 27, "Output"]
 }, Open  ]]
 }
 ]

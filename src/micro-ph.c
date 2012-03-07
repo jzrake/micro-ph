@@ -343,6 +343,11 @@ void microph_get(struct ThermalState *S, int flags)
   // ---------------------------------------------------------------------------
   if (flags & mphPhotons) {
 
+    const double a = pow(M_PI, 2) / (15*pow(HBAR_C, 3));
+
+    S->n += 0.0;
+    S->p += a * pow(S->kT, 4) / 3.0;
+    S->p += a * pow(S->kT, 4);
   }
 }
 
