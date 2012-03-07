@@ -11,7 +11,7 @@ static const double INTEGRATE_STEP_SIZE  = 1.0;
 static const double INTEGRATE_ACC_GOAL   = 1e-10;
 static const double ZERO_SLOPE_REACHED   = 1e-12;
 static const int    ZERO_SLOPE_REPEATED  = 10;
-static const double ZERO_SECANT_REACHED  = 1e-8;
+static const double ZERO_SECANT_REACHED  = 1e-6;
 static const int    MAX_SECANT_ITER      = 500;
 
 
@@ -70,7 +70,7 @@ double rootfind_secant(double (*f)(double, void*), void *p)
 double rootfind_newton(double (*f)(double, void*), void *p)
 {
   int niter = 0;
-  double dx = 1e-10;
+  double dx = 1e-8;
   double x = 0.0;
 
   while (1) {

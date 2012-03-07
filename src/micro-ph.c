@@ -147,7 +147,7 @@ double integrand_neutrino_u(double x, double t)
 
 double evaluate_ne(double eta, double beta)
 {
-  printf("[%s]: eta = %f, beta = %f\n", __FUNCTION__, eta, beta);
+  //  printf("[%s]: eta = %f, beta = %f\n", __FUNCTION__, eta, beta);
   EtaValue = eta;
   BetaValue = beta;
   return integrate_to_infinite(integrand_ne_42);
@@ -361,8 +361,8 @@ void microph_test_eta()
   printf("\ntesting solution to chemical potential of pairs\n");
   printf(sep);
   printf("%+18.15e (%+18.15e)\n", f(1e0, 1.0), -0.6525037133686798);
-  printf("%+18.15e (%+18.15e)\n", f(1e1, 1.0),  7.316055681629137);
-  printf("%+18.15e (%+18.15e)\n", f(1e2, 1.0), 75.47842301516384);
+  //  printf("%+18.15e (%+18.15e)\n", f(1e1, 1.0),  7.316055681629137);
+  //  printf("%+18.15e (%+18.15e)\n", f(1e2, 1.0), 75.47842301516384);
 
   printf("\ntesting the rootfinder a bit harder\n");
   printf(sep);
@@ -444,8 +444,8 @@ int main(int argc, char **argv)
   }
 
   microph_test_npu();
-  //  microph_test_eta();
-  //  microph_test_eos();
+  microph_test_eta();
+  microph_test_eos();
 
   return 0;
 }
