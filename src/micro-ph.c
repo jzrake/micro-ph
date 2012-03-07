@@ -159,6 +159,23 @@ double integrand_u_massless(double x, void *p)
   return pdf_fermion_massless(x,p) * ferm_internal_energy(x,p);
 }
 
+
+double dntegrand_n(double x, void *p)
+{
+  return pdf_fermion_deriv(x,p) * ferm_number_density(x,p);
+}
+double dvaluate_ne(double eta, double beta)
+{
+  double p[3] = { +1, eta, beta };
+  return integrate_to_infinite(dntegrand_n, p);
+}
+double dvaluate_np(double eta, double beta)
+{
+  double p[3] = { -1, eta, beta };
+  return integrate_to_infinite(dntegrand_n, p);
+}
+
+
 double evaluate_ne(double eta, double beta)
 {
   double p[3] = { +1, eta, beta };
@@ -221,9 +238,16 @@ double relation_eta_pairs(double eta, void *p)
   const double C    = ((double*)p)[1];
   return evaluate_ne(eta, beta) - evaluate_np(eta, beta) - C;
 }
+double delation_eta_pairs(double eta, void *p) // its derivative
+{
+  const double beta = ((double*)p)[0];
+  return dvaluate_ne(eta, beta) - dvaluate_np(eta, beta);
+}
+
 double solve_for_eta_pairs(double beta, double C)
 {
   double p[2] = { beta, C };
+  //  return rootfind(relation_eta_pairs, delation_eta_pairs, p);
   return rootfind(relation_eta_pairs, NULL, p);
 }
 
@@ -246,17 +270,17 @@ double solve_for_eta_neutrino(double beta, double C)
 
 
 void microph_get_chemical_potential_pairs(struct ThermalState *S)
+// -----------------------------------------------------------------------------
+// This is just the dimensional version of solve_for_eta_pairs, it returns the
+// chemical potential in MeV.
+// -----------------------------------------------------------------------------
 {
   const double c2 = LIGHT_SPEED*LIGHT_SPEED;
   const double Vol = pow(M_PI, 2) * pow(HBAR_C/ELECTRON_MASS, 3);
   const double Erest = S->density * c2 * FM3_TO_CM3 / MEV_TO_ERG;
-  const double N = Vol * S->Ye * Erest / ATOMIC_MASS_UNIT;
+  const double C = Vol * S->Ye * Erest / ATOMIC_MASS_UNIT;
   const double beta = ELECTRON_MASS / S->kT;
-
-  printf("[%s]: beta = %f N = %f\n", __FUNCTION__, beta, N);
-
-  double param[2] = { beta, N };
-  const double eta = rootfind(relation_eta_pairs, NULL, param);
+  const double eta = solve_for_eta_pairs(beta, C);
   S->mu_ep = eta * S->kT;
 }
 
@@ -360,6 +384,14 @@ void microph_test_npu()
   printf("pp(1.0, 1.0) = %18.15e (%18.15e)\n", evaluate_up(1.0, 1.0), T2[1]);
   printf("pe(1.0, 0.1) = %18.15e (%18.15e)\n", evaluate_ue(1.0, 0.1), T2[2]);
   printf("pp(1.0, 0.1) = %18.15e (%18.15e)\n", evaluate_up(1.0, 0.1), T2[3]);
+
+  /* not working yet --->
+  printf("\ntesting derivative of fermi integral\n");
+  printf(sep);
+  const double T3[] = { 6.574627294589577, -0.21539712325750585 };
+  printf("dne(1.0, 1.0) = %18.15e (%18.15e)\n", dvaluate_ne(1.0, 1.0), T3[0]);
+  printf("dnp(1.0, 1.0) = %18.15e (%18.15e)\n", dvaluate_np(1.0, 1.0), T3[1]);
+  */
 }
 
 
@@ -456,8 +488,8 @@ int main(int argc, char **argv)
   }
 
   microph_test_npu();
-  //  microph_test_eta();
-  //  microph_test_eos();
+  microph_test_eta();
+  microph_test_eos();
 
   return 0;
 }
