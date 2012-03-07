@@ -4,16 +4,22 @@
 #include <stdio.h>
 #include <math.h>
 
+static int verbose = 0;
 
-static int    verbose = 0;
-static int    MAX_INTEGRAL_ITER    = 1000000;
-static double INTEGRATE_STEP_SIZE  = 1e-2;
-static double ZERO_SLOPE_REACHED   = 1e-12;
-static int    ZERO_SLOPE_REPEATED  = 10;
-static double ZERO_SECANT_REACHED  = 1e-8;
-static int    MAX_SECANT_ITER      = 500;
+static const int    MAX_INTEGRAL_ITER    = 1000000;
+static const double INTEGRATE_STEP_SIZE  = 1.0;
+static const double INTEGRATE_ACC_GOAL   = 1e-10;
+static const double ZERO_SLOPE_REACHED   = 1e-12;
+static const int    ZERO_SLOPE_REPEATED  = 10;
+static const double ZERO_SECANT_REACHED  = 1e-8;
+static const int    MAX_SECANT_ITER      = 500;
 
-static double step_rk4(double (*f)(double t, double y), double t, double y, double dt);
+
+typedef double (*Dfunc)(double t, double y); // derivative function
+
+static double step_rk4 (Dfunc f, double t, double y, double dt);
+static double step_rk4a(Dfunc f, double t, double y, double *h);
+
 
 void solvers_set_verbose(int v)
 {
@@ -96,7 +102,7 @@ double rootfind_newton(double (*f)(double, void*), void *p)
 
 
 
-double integrate_to_infinite(double (*f)(double t, double y))
+double integrate_to_infinite(Dfunc f)
 // -----------------------------------------------------------------------------
 // Calls the RK4 routine to integrate the function 'f' until its value is no
 // longer changing. Typical algorithm parameters are ZERO_SLOPE_REACHED = 1e-10,
@@ -111,7 +117,7 @@ double integrate_to_infinite(double (*f)(double t, double y))
 
   while (1) {
 
-    dy = step_rk4(f, x, y, dx);
+    dy = step_rk4a(f, x, y, &dx);
     y += dy;
     x += dx;
 
@@ -130,14 +136,17 @@ double integrate_to_infinite(double (*f)(double t, double y))
       break;
     }
   }
-
+  if (verbose > 0) {
+    printf("[%s]: converged to %e after %d iterations\n", __FUNCTION__,
+	   y, niter);
+  }
   return y;
 }
 
 
 
 
-double step_rk4(double (*f)(double t, double y), double t, double y, double dt)
+double step_rk4(Dfunc f, double t, double y, double dt)
 // -----------------------------------------------------------------------------
 // Take a 4th-order Runge-Kutta step for ODE integration, returns dy.
 //
@@ -157,4 +166,40 @@ double step_rk4(double (*f)(double t, double y), double t, double y, double dt)
   const double k4 = dt * f(t + 1.0*dt, y + 1.0*k3);
 
   return (1./6.)*(k1 + 2*k2 + 2*k3 + k4);
+}
+
+double esterr(Dfunc f, double t, double y, double dt, double *dy)
+{
+  const double dy0 = step_rk4(f, t, y, dt*0.5); // y(t + dt/2)
+  const double dy_half = step_rk4(f, t+0.5*dt, y+dy0, dt*0.5) + dy0;
+  const double dy_full = step_rk4(f, t, y, dt);
+
+  if (dy != NULL) *dy = dy_half;
+
+  if (fabs(dy_half) < 1e-16) {
+    return fabs(dy_full - dy_half);
+  }
+  else {
+    return fabs(dy_full - dy_half) / dy_half;
+  }
+}
+
+double step_rk4a(Dfunc f, double t, double y, double *h)
+// -----------------------------------------------------------------------------
+// Same as step_rk4, but uses step doubling as a means of adaptive step size
+// control.
+// -----------------------------------------------------------------------------
+{
+  static double dt = INTEGRATE_STEP_SIZE;
+
+  while (esterr(f,t,y,dt,NULL) < INTEGRATE_ACC_GOAL) {
+    dt *= 2.0;
+  }
+
+  while (esterr(f,t,y,dt,NULL) > INTEGRATE_ACC_GOAL) {
+    dt *= 0.5;
+  }
+
+  *h = dt;
+  return step_rk4(f, t, y, dt);
 }

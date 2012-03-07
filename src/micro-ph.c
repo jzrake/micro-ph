@@ -443,9 +443,9 @@ int main(int argc, char **argv)
     }
   }
 
-  //  microph_test_npu();
+  microph_test_npu();
   //  microph_test_eta();
-  microph_test_eos();
+  //  microph_test_eos();
 
   return 0;
 }
