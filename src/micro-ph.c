@@ -35,7 +35,7 @@ typedef double (*Dfunc)(double t, void *p);
 double rootfind_secant(Dfunc f, Dfunc g, void *p);
 double rootfind_newton(Dfunc f, Dfunc g, void *p);
 double integrate_to_infinite(Dfunc f, void *p);
-
+void plot_function(Dfunc f, void *p, double a, double b, const char *fname);
 
 void solvers_set_verbose(int v);
 
@@ -385,13 +385,18 @@ void microph_test_npu()
   printf("pe(1.0, 0.1) = %18.15e (%18.15e)\n", evaluate_ue(1.0, 0.1), T2[2]);
   printf("pp(1.0, 0.1) = %18.15e (%18.15e)\n", evaluate_up(1.0, 0.1), T2[3]);
 
-  /* not working yet --->
+  /*
+  double param_e[] = { +1,1,1 };
+  double param_p[] = { -1,1,1 };
+  plot_function(pdf_fermion_deriv, param_e, 0.0, 10.0, "electron.dat");
+  plot_function(pdf_fermion_deriv, param_p, 0.0, 10.0, "positron.dat");
+  */
+
   printf("\ntesting derivative of fermi integral\n");
   printf(sep);
   const double T3[] = { 6.574627294589577, -0.21539712325750585 };
   printf("dne(1.0, 1.0) = %18.15e (%18.15e)\n", dvaluate_ne(1.0, 1.0), T3[0]);
   printf("dnp(1.0, 1.0) = %18.15e (%18.15e)\n", dvaluate_np(1.0, 1.0), T3[1]);
-  */
 }
 
 
@@ -488,8 +493,8 @@ int main(int argc, char **argv)
   }
 
   microph_test_npu();
-  microph_test_eta();
-  microph_test_eos();
+  //  microph_test_eta();
+  //  microph_test_eos();
 
   return 0;
 }

@@ -19,6 +19,7 @@ typedef double (*Dfunc)(double t, void *p);
 double rootfind_secant(Dfunc f, Dfunc g, void *p);
 double rootfind_newton(Dfunc f, Dfunc g, void *p);
 double integrate_to_infinite(Dfunc f, void *p);
+void plot_function(Dfunc f, void *p, double a, double b, const char *fname);
 
 
 static double step_rk4 (Dfunc f, double t, void *p, double dt);
@@ -28,6 +29,19 @@ static double step_rk4a(Dfunc f, double t, void *p, double *h);
 void solvers_set_verbose(int v)
 {
   verbose = v;
+}
+
+void plot_function(Dfunc f, void *p, double a, double b, const char *fname)
+{
+  FILE *out = fopen(fname, "w");
+  int i;
+
+  for (i=0; i<1000; ++i) {
+    double x = a + i*(b-a)/1000.0;
+    fprintf(out, "%e %e\n", x, f(x,p));
+  }
+
+  fclose(out);
 }
 
 double rootfind_secant(Dfunc f, Dfunc g, void *p)
@@ -152,8 +166,6 @@ double integrate_to_infinite(Dfunc f, void *p)
 }
 
 
-
-
 double step_rk4(Dfunc f, double t, void *p, double dt)
 // -----------------------------------------------------------------------------
 // Take a 4th-order Runge-Kutta step for ODE integration, returns dy.
@@ -188,7 +200,7 @@ double esterr(Dfunc f, double t, void *p, double dt, double *dy)
     return fabs(dy_full - dy_half);
   }
   else {
-    return fabs(dy_full - dy_half) / dy_half;
+    return fabs((dy_full - dy_half) / dy_half);
   }
 }
 
