@@ -423,9 +423,14 @@ void microph_test_eta()
   f = solve_for_eta_pairs;
   printf("\ntesting solution to chemical potential of pairs\n");
   printf(sep);
-  printf("%+18.15e (%+18.15e)\n", f(1e0, 1.0), -0.6525037133686798);
-  printf("%+18.15e (%+18.15e)\n", f(1e1, 1.0),  7.316055681629137);
-  printf("%+18.15e (%+18.15e)\n", f(1e2, 1.0), 75.47842301516384);
+  //  printf("%+18.15e (%+18.15e)\n", f(1e0, 1.0), -0.6525037133686798);
+  //  printf("%+18.15e (%+18.15e)\n", f(1e1, 1.0),  7.316055681629137);
+  //  printf("%+18.15e (%+18.15e)\n", f(1e2, 1.0), 75.47842301516384);
+
+  double p[] = { -1.000000e+00, -5.000000e-09, 5.110999e+01 };
+  //  plot_function(relation_eta_pairs, p, 0.2, 1.0, "output.dat");
+  plot_function(integrand_n, p, 0.0, 1.0, "output.dat");
+  exit(1);
 
   printf("\ntesting the rootfinder a bit harder\n");
   printf(sep);
@@ -492,15 +497,15 @@ int main(int argc, char **argv)
 {
   int c;
 
-  while ((c = getopt(argc, argv, "a:dv:h")) != -1) {
+  while ((c = getopt(argc, argv, "a:d:v:h")) != -1) {
     switch (c) {
     case 'v':
       printf("v: using verbose level %s\n", optarg);
       microph_set_verbose(atoi(optarg));
       break;
     case 'd':
-      printf("d: using exact derivatives for rootfinder\n");
-      use_exact_derivatives = 1;
+      printf("a: using exact derivatives for rootfinder %s\n", optarg);
+      use_exact_derivatives = atoi(optarg);
       break;
     case 'a':
       printf("a: using adaptive step size for integrator %s\n", optarg);

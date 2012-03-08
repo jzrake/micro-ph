@@ -83,14 +83,14 @@ double rootfind_secant(Dfunc f, Dfunc g, void *p)
       break;
     }
     else if (++niter == MAX_SECANT_ITER) {
-      printf("[%s]: warning! convergence took too many iterations\n",
+      printf("[%s]: warning! convergence took too many steps\n",
 	     __FUNCTION__);
       exit(1);
       break;
     }
   }
   if (verbose >= 1) {
-    printf("[%s]: converged to %e after %d iterations\n", __FUNCTION__,
+    printf("[%s]: converged to %e after %d steps\n", __FUNCTION__,
 	   x2, niter);
   }
   return x2;
@@ -110,7 +110,11 @@ double rootfind_newton(Dfunc f, Dfunc g, void *p)
     if (verbose >= 1) {
       printf("[%s]: f(%e) = %e, g(%e) = %e\n", __FUNCTION__, x, f0, x, g0);
     }
-
+    if (fabs(g0) < 1e-16) {
+      printf("[%s]: warning! got zero derivative\n", __FUNCTION__);
+      exit(1);
+      break;
+    }
     x -= f0/g0;
 
     if (fabs(f0) < ZERO_SECANT_REACHED) {
@@ -228,7 +232,7 @@ double esterr(Dfunc f, double t, void *p, double dt, double *dy)
 
   if (dy != NULL) *dy = dy_half;
 
-  if (dy_half == 0.0) {
+  if (fabs(dy_half) < 1e-16) {
     return INTEGRATE_ACC_GOAL;
   }
   else {
