@@ -98,7 +98,6 @@ PyObject *eospy_pressure(PyObject *self, PyObject *args, PyObject *kwargs)
   if (electrons) flags |= mphElectrons;
   if (positrons) flags |= mphPositrons;
 
-  microph_get_chemical_potential_pairs(&S);
   microph_get(&S, flags);
 
   PyObject *ret;

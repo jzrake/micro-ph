@@ -34,9 +34,13 @@
 typedef double (*Dfunc)(double t, void *p);
 double rootfind_secant(Dfunc f, Dfunc g, void *p);
 double rootfind_newton(Dfunc f, Dfunc g, void *p);
-double integrate_to_infinite(Dfunc f, void *p);
+double integrate_to_infinity(Dfunc f, void *p);
 void plot_function(Dfunc f, void *p, double a, double b, const char *fname);
 void solvers_set_verbose(int v);
+void solvers_set_adaptive_step(int a);
+int  solvers_get_error();
+
+
 void microph_set_verbose(int v) {
   solvers_set_verbose(v);
 }
@@ -60,6 +64,7 @@ struct ThermalState
 };
 
 
+static int use_exact_derivatives = 0;
 static double (*rootfind)(Dfunc f, Dfunc g, void *p) = rootfind_newton;
 
 static const double LIGHT_SPEED      = 2.997924580e+10; // cm/s
@@ -85,6 +90,7 @@ double pdf_fermion(double x, void *p)
   const double sgn  = ((double*)p)[0]; // (-) for anti-fermions
   const double eta  = ((double*)p)[1];
   const double beta = ((double*)p)[2];
+  //  printf("%f %f %f\n", sgn, eta, beta);
   return (x*x) / (exp(beta * (sqrt(1 + x*x) - sgn) - sgn*eta) + 1);
 }
 double pdf_fermion_deriv(double x, void *p)
@@ -170,63 +176,63 @@ double dntegrand_n(double x, void *p)
 double dvaluate_ne(double eta, double beta)
 {
   double p[3] = { +1, eta, beta };
-  return integrate_to_infinite(dntegrand_n, p);
+  return integrate_to_infinity(dntegrand_n, p);
 }
 double dvaluate_np(double eta, double beta)
 {
   double p[3] = { -1, eta, beta };
-  return integrate_to_infinite(dntegrand_n, p);
+  return integrate_to_infinity(dntegrand_n, p);
 }
 
 
 double evaluate_ne(double eta, double beta)
 {
   double p[3] = { +1, eta, beta };
-  return integrate_to_infinite(integrand_n, p);
+  return integrate_to_infinity(integrand_n, p);
 }
 double evaluate_np(double eta, double beta)
 {
   double p[3] = { -1, eta, beta };
-  return integrate_to_infinite(integrand_n, p);
+  return integrate_to_infinity(integrand_n, p);
 }
 
 double evaluate_pe(double eta, double beta)
 {
   double p[3] = { +1, eta, beta };
-  return integrate_to_infinite(integrand_p, p);
+  return integrate_to_infinity(integrand_p, p);
 }
 double evaluate_pp(double eta, double beta)
 {
   double p[3] = { -1, eta, beta };
-  return integrate_to_infinite(integrand_p, p);
+  return integrate_to_infinity(integrand_p, p);
 }
 
 double evaluate_ue(double eta, double beta)
 {
   double p[3] = { +1, eta, beta };
-  return integrate_to_infinite(integrand_u, p);
+  return integrate_to_infinity(integrand_u, p);
 }
 double evaluate_up(double eta, double beta)
 {
   double p[3] = { -1, eta, beta };
-  return integrate_to_infinite(integrand_u, p);
+  return integrate_to_infinity(integrand_u, p);
 }
 
 
 double evaluate_neutrino_n(double eta)
 {
   double p[2] = { +1, eta };
-  return integrate_to_infinite(integrand_n_massless, p);
+  return integrate_to_infinity(integrand_n_massless, p);
 }
 double evaluate_neutrino_p(double eta)
 {
   double p[2] = { +1, eta };
-  return integrate_to_infinite(integrand_p_massless, p);
+  return integrate_to_infinity(integrand_p_massless, p);
 }
 double evaluate_neutrino_u(double eta)
 {
   double p[2] = { +1, eta };
-  return integrate_to_infinite(integrand_u_massless, p);
+  return integrate_to_infinity(integrand_u_massless, p);
 }
 
 
@@ -250,7 +256,12 @@ double delation_eta_pairs(double eta, void *p) // its derivative
 double solve_for_eta_pairs(double beta, double C)
 {
   double p[2] = { beta, C };
-  return rootfind(relation_eta_pairs, delation_eta_pairs, p);
+  if (use_exact_derivatives) {
+    return rootfind(relation_eta_pairs, delation_eta_pairs, p);
+  }
+  else {
+    return rootfind(relation_eta_pairs, NULL, p);
+  }
 }
 
 double relation_eta_neutrino(double eta, void *p)
@@ -303,6 +314,10 @@ void microph_get(struct ThermalState *S, int flags)
   S->n = 0.0;
   S->p = 0.0;
   S->u = 0.0;
+
+  if (flags & mphElectrons || flags & mphPositrons) {
+    microph_get_chemical_potential_pairs(S);
+  }
 
   // Electrons
   // ---------------------------------------------------------------------------
@@ -392,13 +407,6 @@ void microph_test_npu()
   printf("pe(1.0, 0.1) = %18.15e (%18.15e)\n", evaluate_ue(1.0, 0.1), T2[2]);
   printf("pp(1.0, 0.1) = %18.15e (%18.15e)\n", evaluate_up(1.0, 0.1), T2[3]);
 
-  /*
-  double param_e[] = { +1,1,1 };
-  double param_p[] = { -1,1,1 };
-  plot_function(pdf_fermion_deriv, param_e, 0.0, 10.0, "electron.dat");
-  plot_function(pdf_fermion_deriv, param_p, 0.0, 10.0, "positron.dat");
-  */
-
   printf("\ntesting derivative of fermi integral\n");
   printf(sep);
   const double T3[] = { 6.574627294589577, -0.21539712325750585 };
@@ -416,8 +424,8 @@ void microph_test_eta()
   printf("\ntesting solution to chemical potential of pairs\n");
   printf(sep);
   printf("%+18.15e (%+18.15e)\n", f(1e0, 1.0), -0.6525037133686798);
-  //  printf("%+18.15e (%+18.15e)\n", f(1e1, 1.0),  7.316055681629137);
-  //  printf("%+18.15e (%+18.15e)\n", f(1e2, 1.0), 75.47842301516384);
+  printf("%+18.15e (%+18.15e)\n", f(1e1, 1.0),  7.316055681629137);
+  printf("%+18.15e (%+18.15e)\n", f(1e2, 1.0), 75.47842301516384);
 
   printf("\ntesting the rootfinder a bit harder\n");
   printf(sep);
@@ -483,11 +491,20 @@ void microph_test_eos()
 int main(int argc, char **argv)
 {
   int c;
-  while ((c = getopt(argc, argv, "v:h")) != -1) {
+
+  while ((c = getopt(argc, argv, "a:dv:h")) != -1) {
     switch (c) {
     case 'v':
-      printf("using verbose level %s\n", optarg);
+      printf("v: using verbose level %s\n", optarg);
       microph_set_verbose(atoi(optarg));
+      break;
+    case 'd':
+      printf("d: using exact derivatives for rootfinder\n");
+      use_exact_derivatives = 1;
+      break;
+    case 'a':
+      printf("a: using adaptive step size for integrator %s\n", optarg);
+      solvers_set_adaptive_step(atoi(optarg));
       break;
     case 'h':
       printf("usage: micro-ph [-v]\n");
@@ -500,9 +517,9 @@ int main(int argc, char **argv)
     }
   }
 
-  microph_test_npu();
+  //  microph_test_npu();
   microph_test_eta();
-  microph_test_eos();
+  //  microph_test_eos();
 
   return 0;
 }

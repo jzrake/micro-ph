@@ -1,13 +1,16 @@
 
 
-
+#include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 
 static int verbose = 0;
+static int adaptive = 1;
+static int error = 0;
 
-static const int    MAX_INTEGRAL_ITER    = 1000000;
-static const double INTEGRATE_ACC_GOAL   = 1e-10;
+static const int    MAX_INTEGRAL_ITER    = 10000;
+static const double INTEGRATE_ACC_GOAL   = 1e-8;
+static const double INTEGRATE_STEP_SIZE  = 1e-2;
 static const double ZERO_SLOPE_REACHED   = 1e-12;
 static const int    ZERO_SLOPE_REPEATED  = 10;
 static const double ZERO_SECANT_REACHED  = 1e-6;
@@ -18,8 +21,11 @@ static const int    MAX_SECANT_ITER      = 500;
 typedef double (*Dfunc)(double t, void *p);
 double rootfind_secant(Dfunc f, Dfunc g, void *p);
 double rootfind_newton(Dfunc f, Dfunc g, void *p);
-double integrate_to_infinite(Dfunc f, void *p);
+double integrate_to_infinity(Dfunc f, void *p);
 void plot_function(Dfunc f, void *p, double a, double b, const char *fname);
+void solvers_set_verbose(int v);
+void solvers_set_adaptive_step(int a);
+int solvers_get_error() { return error; }
 
 
 static double step_rk4 (Dfunc f, double t, void *p, double dt);
@@ -29,6 +35,10 @@ static double step_rk4a(Dfunc f, double t, void *p, double *h);
 void solvers_set_verbose(int v)
 {
   verbose = v;
+}
+void solvers_set_adaptive_step(int a)
+{
+  adaptive = a;
 }
 
 void plot_function(Dfunc f, void *p, double a, double b, const char *fname)
@@ -75,6 +85,7 @@ double rootfind_secant(Dfunc f, Dfunc g, void *p)
     else if (++niter == MAX_SECANT_ITER) {
       printf("[%s]: warning! convergence took too many iterations\n",
 	     __FUNCTION__);
+      exit(1);
       break;
     }
   }
@@ -97,7 +108,7 @@ double rootfind_newton(Dfunc f, Dfunc g, void *p)
     double g0 = g ? g(x, p) : (f(x+0.5*dx, p) - f(x-0.5*dx, p))/dx;
 
     if (verbose >= 1) {
-      printf("[%s]: f(%f) = %e\n", __FUNCTION__, x, f0);
+      printf("[%s]: f(%e) = %e, g(%e) = %e\n", __FUNCTION__, x, f0, x, g0);
     }
 
     x -= f0/g0;
@@ -108,6 +119,7 @@ double rootfind_newton(Dfunc f, Dfunc g, void *p)
     else if (++niter == MAX_SECANT_ITER) {
       printf("[%s]: warning! convergence took too many iterations\n",
 	     __FUNCTION__);
+      exit(1);
       break;
     }
   }
@@ -120,41 +132,61 @@ double rootfind_newton(Dfunc f, Dfunc g, void *p)
 
 
 
-double integrate_to_infinite(Dfunc f, void *p)
+double integrate_to_infinity(Dfunc f, void *p)
 // -----------------------------------------------------------------------------
 // Calls the RK4 routine to integrate the function 'f' until its value is no
 // longer changing. Typical algorithm parameters are ZERO_SLOPE_REACHED = 1e-10,
 // ZERO_SLOPE_REPEATED = 10.
 // -----------------------------------------------------------------------------
 {
+  if (verbose >= 1) {
+    printf("[%s]: starting new integration, adaptive step %s\n", __FUNCTION__,
+	   adaptive ? "enabled" : "disabled");
+    printf("params = %e %e %e\n", ((double*)p)[0], ((double*)p)[1], ((double*)p)[2]);
+  }
+
   int n_zero_slope = 0, niter = 0;
-  double dx = 1e-3; // initial choice does not matter if adaptive step size
-  double dy = dx;
+  double dx;
+  double dy;
   double x = 0.0;
   double y = 0.0;
 
   while (1) {
-    
-    if (verbose >= 2) {
-      printf("[%s]: x=%f y(x)=%e\n", __FUNCTION__, x, y);
+
+    if (adaptive) {
+      dy = step_rk4a(f, x, p, &dx);
+    }
+    else {
+      dx = INTEGRATE_STEP_SIZE;
+      dy = step_rk4(f, x, p, dx);
     }
 
-    dy = step_rk4a(f, x, p, &dx);
+    if (verbose >= 2) {
+      printf("[%s]: x=%e dx=%e, y(x)=%e\n", __FUNCTION__, x, dx, y);
+    }
+
     y += dy;
     x += dx;
 
-    if (fabs(dy/dx) < ZERO_SLOPE_REACHED) {
+    if (isnan(dy) || isnan(dx)) {
+      printf("[%s]: encountered nan\n", __FUNCTION__);
+      exit(1);
+      break;
+    }
+    else if (fabs(dy/dx) < ZERO_SLOPE_REACHED) {
       n_zero_slope += 1;
     }
     else {
       n_zero_slope = 0;
     }
+
     if (n_zero_slope == ZERO_SLOPE_REPEATED) {
       break;
     }
     else if (++niter == MAX_INTEGRAL_ITER) {
       printf("[%s]: warning! convergence took too many iterations\n",
 	     __FUNCTION__);
+      exit(1);
       break;
     }
   }
@@ -196,8 +228,8 @@ double esterr(Dfunc f, double t, void *p, double dt, double *dy)
 
   if (dy != NULL) *dy = dy_half;
 
-  if (fabs(dy_half) < 1e-16) {
-    return fabs(dy_full - dy_half);
+  if (dy_half == 0.0) {
+    return INTEGRATE_ACC_GOAL;
   }
   else {
     return fabs((dy_full - dy_half) / dy_half);
