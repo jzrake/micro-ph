@@ -118,5 +118,5 @@ def solve_eta_neutrinos(C):
     C    :              ... dimensionless number density
     """
     def f(eta):
-        return evaluate_n(+1, eta, beta) - evaluate_n(-1, eta, beta) - C
+        return evaluate_n(+1, eta, beta) - C
     return newton(f, 0.0)
