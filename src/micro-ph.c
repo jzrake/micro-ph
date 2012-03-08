@@ -36,13 +36,16 @@ double rootfind_secant(Dfunc f, Dfunc g, void *p);
 double rootfind_newton(Dfunc f, Dfunc g, void *p);
 double integrate_to_infinite(Dfunc f, void *p);
 void plot_function(Dfunc f, void *p, double a, double b, const char *fname);
-
 void solvers_set_verbose(int v);
+void microph_set_verbose(int v) {
+  solvers_set_verbose(v);
+}
 
-const int mphElectrons   =  (1 << 0); // option flags
-const int mphPositrons   =  (1 << 1);
-const int mphNeutrinos   =  (1 << 2);
-const int mphPhotons     =  (1 << 3);
+
+#define mphElectrons     (1 << 0) // option flags
+#define mphPositrons     (1 << 1)
+#define mphNeutrinos     (1 << 2)
+#define mphPhotons       (1 << 3)
 
 struct ThermalState
 {
@@ -57,7 +60,7 @@ struct ThermalState
 };
 
 
-static double (*rootfind)(Dfunc f, Dfunc g, void *p);
+static double (*rootfind)(Dfunc f, Dfunc g, void *p) = rootfind_newton;
 
 static const double LIGHT_SPEED      = 2.997924580e+10; // cm/s
 static const double HBAR_C           = 1.973269718e+02; // MeV-fm
@@ -465,6 +468,9 @@ void microph_test_eos()
   microph_get(S, mphPositrons);
   printf("Positron pressure = %e MeV/fm^3\n", S->p);
 
+  microph_get(S, mphPhotons);
+  printf("Photon pressure = %e MeV/fm^3\n", S->p);
+
   free(S);
 }
 
@@ -476,14 +482,12 @@ void microph_test_eos()
 
 int main(int argc, char **argv)
 {
-  rootfind = rootfind_newton;
-
   int c;
   while ((c = getopt(argc, argv, "v:h")) != -1) {
     switch (c) {
     case 'v':
       printf("using verbose level %s\n", optarg);
-      solvers_set_verbose(atoi(optarg));
+      microph_set_verbose(atoi(optarg));
       break;
     case 'h':
       printf("usage: micro-ph [-v]\n");
