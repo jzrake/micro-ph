@@ -5,12 +5,13 @@ from scipy.integrate import quadpack
 from scipy.optimize import newton, brentq
 
 
-LIGHT_SPEED      = 2.997924580e+10; # cm/s
-HBAR_C           = 1.973269718e+02; # MeV-fm
-ELECTRON_MASS    = 5.110998928e-01; # MeV
-ATOMIC_MASS_UNIT = 9.314940612e+02; # MeV
-MEV_TO_ERG       = 1.602176487e-06;
-FM3_TO_CM3       = 1.000000000e-39;
+LIGHT_SPEED      = 2.997924580e+10 # cm/s
+HBAR_C           = 1.973269718e+02 # MeV-fm
+ELECTRON_MASS    = 5.110998928e-01 # MeV
+ATOMIC_MASS_UNIT = 9.314940612e+02 # MeV
+PROTON_MASS      = 9.382720462e+02 # MeV
+MEV_TO_ERG       = 1.602176487e-06
+FM3_TO_CM3       = 1.000000000e-39
 
 
 # don't worry about overflows in exp
@@ -219,11 +220,22 @@ def eos_eval(D, kT, Ye, component):
         p += a * np.power(kT, 4) / 3.0
         u += a * np.power(kT, 4)
 
-    if "hot_pairs" in component:
-        a = pow(np.pi, 2) / (15*np.power(HBAR_C, 3))
-        n += 0.0
-        p += a * np.power(kT, 4) * 7./11.
-        u += a * np.power(kT, 4)
+    if "cold_electrons" in component:
+        # http://scienceworld.wolfram.com/physics/ElectronDegeneracyPressure.html
+
+        Erest = D * LIGHT_SPEED*LIGHT_SPEED * FM3_TO_CM3 / MEV_TO_ERG
+        ne = Ye * Erest / ATOMIC_MASS_UNIT
+
+        # adding the factor 1/8pi below brings cold electrons very close to the
+        # limiting case of real electrons
+
+        num = np.power(np.pi, 2) * np.power(HBAR_C, 2) / (8*np.pi)
+        den = 5.0 * ELECTRON_MASS
+        las = np.power(3.0/np.pi, 2./3.) * np.power(ne, 5./3.)
+
+        n += ne
+        p += (num/den) * las
+        u += 0.0 # not implemented yet
 
     return n, p, u
 

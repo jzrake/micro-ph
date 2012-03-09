@@ -21,13 +21,20 @@ def test_large_beta():
 
 
 def test_compare_pressure(D=1e13):
-    temp = np.logspace(1.0, 1.8, 4)
+    temp = np.logspace(-3.0, -1.0, 20)
+
     #pos = [eos_eval(D, T, 0.08, ["positrons"])[1] for T in temp]
-    ele = [eos_eval(D, T, 0.08, ["electrons"])[1] for T in temp]
-    pho = [eos_eval(D, T, 0.08, ["hot_pairs"])[1] for T in temp]
     #plt.loglog(temp, pos, '-x', label=r"$e_+$")
+
+    #pho = [eos_eval(D, T, 0.08, ["photons"])[1] for T in temp]
+    #plt.loglog(temp, pho, '--', label=r"$\gamma$")
+
+    ele = [eos_eval(D, T, 0.08, ["electrons"])[1] for T in temp]
+    cle = [eos_eval(D, T, 0.08, ["cold_electrons"])[1] for T in temp]
+
+    plt.loglog(temp, cle, '-x', label=r"$e_-$, cold")
     plt.loglog(temp, ele, '-o', label=r"$e_-$")
-    plt.loglog(temp, pho, '--', label=r"$\gamma$")
+
 
     plt.xlabel(r"$k_B T$", fontsize=16)
     plt.ylabel(r"$p(\rho,T) \ \rm{MeV/fm^3}$", fontsize=16)
