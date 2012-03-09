@@ -17,6 +17,7 @@ FM3_TO_CM3       = 1.000000000e-39
 # don't worry about overflows in exp
 np.seterr(over='ignore')
 
+#import shen
 
 def pdf_fermion(x, sgn, eta, beta):
     """

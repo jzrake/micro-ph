@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       157,          7]
-NotebookDataLength[     37833,       1030]
-NotebookOptionsPosition[     36025,        966]
-NotebookOutlinePosition[     36383,        982]
-CellTagsIndexPosition[     36340,        979]
+NotebookDataLength[     51004,       1408]
+NotebookOptionsPosition[     48513,       1322]
+NotebookOutlinePosition[     48871,       1338]
+CellTagsIndexPosition[     48828,       1335]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -100,7 +100,7 @@ Cell[BoxData[{
   3.539460059233667*^9, 3.5394600736443443`*^9}, {3.540065209424679*^9, 
   3.540065211856015*^9}, {3.540065248810608*^9, 3.540065249068808*^9}, {
   3.540065382338175*^9, 3.540065393739133*^9}, {3.5400658718059177`*^9, 
-  3.540065871864765*^9}}],
+  3.540065871864765*^9}, {3.540245114855908*^9, 3.5402451178162737`*^9}}],
 
 Cell[BoxData["8.277498428740389`*^-13"], "Output",
  CellChangeTimes->{
@@ -108,7 +108,8 @@ Cell[BoxData["8.277498428740389`*^-13"], "Output",
    3.5394600745245943`*^9, 3.5399536159238167`*^9, 3.539971736336472*^9, 
    3.539974822797683*^9, 3.540065077154977*^9, 3.540065252881357*^9, {
    3.540065383216538*^9, 3.540065394317305*^9}, {3.54006587238941*^9, 
-   3.540065874748599*^9}, 3.540074854157583*^9}],
+   3.540065874748599*^9}, 3.540074854157583*^9, {3.540245115741086*^9, 
+   3.54024511811902*^9}}],
 
 Cell[BoxData["6.022141511340482`*^42"], "Output",
  CellChangeTimes->{
@@ -116,7 +117,8 @@ Cell[BoxData["6.022141511340482`*^42"], "Output",
    3.5394600745245943`*^9, 3.5399536159238167`*^9, 3.539971736336472*^9, 
    3.539974822797683*^9, 3.540065077154977*^9, 3.540065252881357*^9, {
    3.540065383216538*^9, 3.540065394317305*^9}, {3.54006587238941*^9, 
-   3.540065874748599*^9}, 3.540074854160055*^9}],
+   3.540065874748599*^9}, 3.540074854157583*^9, {3.540245115741086*^9, 
+   3.5402451181217623`*^9}}],
 
 Cell[BoxData["3.4154527179232654`*^6"], "Output",
  CellChangeTimes->{
@@ -124,7 +126,8 @@ Cell[BoxData["3.4154527179232654`*^6"], "Output",
    3.5394600745245943`*^9, 3.5399536159238167`*^9, 3.539971736336472*^9, 
    3.539974822797683*^9, 3.540065077154977*^9, 3.540065252881357*^9, {
    3.540065383216538*^9, 3.540065394317305*^9}, {3.54006587238941*^9, 
-   3.540065874748599*^9}, 3.540074854161859*^9}]
+   3.540065874748599*^9}, 3.540074854157583*^9, {3.540245115741086*^9, 
+   3.540245118123843*^9}}]
 }, Open  ]],
 
 Cell[BoxData[{
@@ -814,15 +817,15 @@ Cell[BoxData[
 Cell[BoxData[
  TagBox[
   StyleBox[
-   DynamicModuleBox[{$CellContext`s$$ = -1, $CellContext`\[Beta]$$ = 
-    0.02, $CellContext`\[Eta]$$ = -5, Typeset`show$$ = True, 
+   DynamicModuleBox[{$CellContext`s$$ = 1, $CellContext`\[Beta]$$ = 
+    0., $CellContext`\[Eta]$$ = 5., Typeset`show$$ = True, 
     Typeset`bookmarkList$$ = {}, Typeset`bookmarkMode$$ = "Menu", 
     Typeset`animator$$, Typeset`animvar$$ = 1, Typeset`name$$ = 
     "\"untitled\"", Typeset`specs$$ = {{
       Hold[$CellContext`s$$], {-1, 1}}, {
       Hold[$CellContext`\[Beta]$$], 0, 10}, {
       Hold[$CellContext`\[Eta]$$], -5, 5}}, Typeset`size$$ = {
-    360., {100., 105.}}, Typeset`update$$ = 0, Typeset`initDone$$, 
+    360., {108., 113.}}, Typeset`update$$ = 0, Typeset`initDone$$, 
     Typeset`skipInitDone$$ = True, $CellContext`s$260422$$ = 
     False, $CellContext`\[Beta]$260423$$ = 0, $CellContext`\[Eta]$260424$$ = 
     0}, 
@@ -846,7 +849,7 @@ Cell[BoxData[
       "Specifications" :> {{$CellContext`s$$, {-1, 
          1}}, {$CellContext`\[Beta]$$, 0, 10}, {$CellContext`\[Eta]$$, -5, 
          5}}, "Options" :> {}, "DefaultOptions" :> {}],
-     ImageSizeCache->{403., {169., 175.}},
+     ImageSizeCache->{403., {204., 210.}},
      SingleEvaluation->True],
     Deinitialization:>None,
     DynamicModuleValues:>{},
@@ -859,6 +862,88 @@ Cell[BoxData[
  CellChangeTimes->{{3.540144504561989*^9, 3.540144521780254*^9}, {
   3.540144617315357*^9, 3.5401446441276417`*^9}, {3.540144835217641*^9, 
   3.540144856466187*^9}}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Manipulate", "[", 
+  RowBox[{
+   RowBox[{"Plot", "[", 
+    RowBox[{
+     FractionBox[
+      SuperscriptBox["x", "2"], 
+      RowBox[{
+       RowBox[{"Exp", "[", 
+        RowBox[{
+         RowBox[{"\[Beta]", 
+          RowBox[{"(", 
+           RowBox[{
+            SuperscriptBox[
+             RowBox[{"(", 
+              RowBox[{"1", "+", 
+               SuperscriptBox["x", "2"]}], ")"}], 
+             RowBox[{"1", "/", "2"}]], "-", 
+            RowBox[{"1", "s"}]}], ")"}]}], "-", 
+         RowBox[{"\[Eta]", " ", "s"}]}], "]"}], "+", "1"}]], ",", 
+     RowBox[{"{", 
+      RowBox[{"x", ",", "0", ",", "1000"}], "}"}]}], "]"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"s", ",", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"-", "1"}], ",", "1"}], "}"}]}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"\[Beta]", ",", "0", ",", "10"}], "}"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"\[Eta]", ",", 
+     RowBox[{"-", "5"}], ",", "5"}], "}"}]}], "]"}]], "Input",
+ CellChangeTimes->{3.540241618805745*^9}],
+
+Cell[BoxData[
+ TagBox[
+  StyleBox[
+   DynamicModuleBox[{$CellContext`s$$ = 1, $CellContext`\[Beta]$$ = 
+    0.08, $CellContext`\[Eta]$$ = -0.2400000000000002, Typeset`show$$ = True, 
+    Typeset`bookmarkList$$ = {}, Typeset`bookmarkMode$$ = "Menu", 
+    Typeset`animator$$, Typeset`animvar$$ = 1, Typeset`name$$ = 
+    "\"untitled\"", Typeset`specs$$ = {{
+      Hold[$CellContext`s$$], {-1, 1}}, {
+      Hold[$CellContext`\[Beta]$$], 0, 10}, {
+      Hold[$CellContext`\[Eta]$$], -5, 5}}, Typeset`size$$ = {
+    360., {109., 113.}}, Typeset`update$$ = 0, Typeset`initDone$$, 
+    Typeset`skipInitDone$$ = True, $CellContext`s$1143$$ = 
+    False, $CellContext`\[Beta]$1144$$ = 0, $CellContext`\[Eta]$1145$$ = 0}, 
+    DynamicBox[Manipulate`ManipulateBoxes[
+     1, StandardForm, 
+      "Variables" :> {$CellContext`s$$ = -1, $CellContext`\[Beta]$$ = 
+        0, $CellContext`\[Eta]$$ = -5}, "ControllerVariables" :> {
+        Hold[$CellContext`s$$, $CellContext`s$1143$$, False], 
+        Hold[$CellContext`\[Beta]$$, $CellContext`\[Beta]$1144$$, 0], 
+        Hold[$CellContext`\[Eta]$$, $CellContext`\[Eta]$1145$$, 0]}, 
+      "OtherVariables" :> {
+       Typeset`show$$, Typeset`bookmarkList$$, Typeset`bookmarkMode$$, 
+        Typeset`animator$$, Typeset`animvar$$, Typeset`name$$, 
+        Typeset`specs$$, Typeset`size$$, Typeset`update$$, Typeset`initDone$$,
+         Typeset`skipInitDone$$}, "Body" :> 
+      Plot[$CellContext`x^2/(
+        Exp[$CellContext`\[Beta]$$ ((1 + $CellContext`x^2)^(1/2) - 
+            1 $CellContext`s$$) - $CellContext`\[Eta]$$ $CellContext`s$$] + 
+        1), {$CellContext`x, 0, 1000}], 
+      "Specifications" :> {{$CellContext`s$$, {-1, 
+         1}}, {$CellContext`\[Beta]$$, 0, 10}, {$CellContext`\[Eta]$$, -5, 
+         5}}, "Options" :> {}, "DefaultOptions" :> {}],
+     ImageSizeCache->{403., {177., 183.}},
+     SingleEvaluation->True],
+    Deinitialization:>None,
+    DynamicModuleValues:>{},
+    SynchronousInitialization->True,
+    UnsavedVariables:>{Typeset`initDone$$},
+    UntrackedVariables:>{Typeset`size$$}], "Manipulate",
+   Deployed->True,
+   StripOnInput->False],
+  Manipulate`InterpretManipulate[1]]], "Output",
+ CellChangeTimes->{3.540241623784225*^9}]
 }, Open  ]],
 
 Cell[BoxData[
@@ -962,6 +1047,277 @@ Cell[BoxData["0.22972287342053377`"], "Output",
 Cell[BoxData[
  RowBox[{"-", "0.03083950682215095`"}]], "Output",
  CellChangeTimes->{{3.5401458433093576`*^9, 3.540145848384943*^9}}]
+}, Open  ]],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"D", "[", 
+   RowBox[{
+    FractionBox[
+     SuperscriptBox["x", "2"], 
+     RowBox[{
+      RowBox[{"Exp", "[", 
+       RowBox[{
+        RowBox[{"\[Beta]", 
+         RowBox[{"(", 
+          RowBox[{
+           SuperscriptBox[
+            RowBox[{"(", 
+             RowBox[{"1", "+", 
+              SuperscriptBox["x", "2"]}], ")"}], 
+            RowBox[{"1", "/", "2"}]], "-", 
+           RowBox[{"1", "s"}]}], ")"}]}], "-", 
+        RowBox[{"\[Eta]", " ", "s"}]}], "]"}], "+", "1"}]], ",", "x"}], "]"}],
+   "//", "FullSimplify"}]], "Input",
+ CellChangeTimes->{{3.540242000297739*^9, 3.540242011881549*^9}, {
+  3.540242050782032*^9, 3.540242057106347*^9}}],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Solve", "[", 
+  RowBox[{
+   RowBox[{
+    FractionBox[
+     RowBox[{
+      SuperscriptBox["\[ExponentialE]", 
+       RowBox[{"s", " ", "\[Eta]"}]], " ", "x", " ", 
+      RowBox[{"(", 
+       RowBox[{
+        RowBox[{"2", " ", 
+         SuperscriptBox["\[ExponentialE]", 
+          RowBox[{"s", " ", "\[Eta]"}]], " ", 
+         SqrtBox[
+          RowBox[{"1", "+", 
+           SuperscriptBox["x", "2"]}]]}], "+", 
+        RowBox[{
+         SuperscriptBox["\[ExponentialE]", 
+          RowBox[{
+           RowBox[{"(", 
+            RowBox[{
+             RowBox[{"-", "s"}], "+", 
+             SqrtBox[
+              RowBox[{"1", "+", 
+               SuperscriptBox["x", "2"]}]]}], ")"}], " ", "\[Beta]"}]], " ", 
+         RowBox[{"(", 
+          RowBox[{
+           RowBox[{"2", " ", 
+            SqrtBox[
+             RowBox[{"1", "+", 
+              SuperscriptBox["x", "2"]}]]}], "-", 
+           RowBox[{
+            SuperscriptBox["x", "2"], " ", "\[Beta]"}]}], ")"}]}]}], ")"}]}], 
+     
+     RowBox[{
+      SuperscriptBox[
+       RowBox[{"(", 
+        RowBox[{
+         SuperscriptBox["\[ExponentialE]", 
+          RowBox[{
+           RowBox[{"(", 
+            RowBox[{
+             RowBox[{"-", "s"}], "+", 
+             SqrtBox[
+              RowBox[{"1", "+", 
+               SuperscriptBox["x", "2"]}]]}], ")"}], " ", "\[Beta]"}]], "+", 
+         SuperscriptBox["\[ExponentialE]", 
+          RowBox[{"s", " ", "\[Eta]"}]]}], ")"}], "2"], " ", 
+      SqrtBox[
+       RowBox[{"1", "+", 
+        SuperscriptBox["x", "2"]}]]}]], "\[Equal]", "0"}], ",", "x"}], "]"}]],\
+ "Input",
+ CellChangeTimes->{{3.540242063126973*^9, 3.540242069337923*^9}}],
+
+Cell[BoxData[
+ RowBox[{
+  StyleBox[
+   RowBox[{"Solve", "::", "ifun"}], "MessageName"], 
+  RowBox[{
+  ":", " "}], "\<\"Inverse functions are being used by \
+\[NoBreak]\\!\\(Solve\\)\[NoBreak], so some solutions may not be found; use \
+Reduce for complete solution information. \\!\\(\\*ButtonBox[\\\"\
+\[RightSkeleton]\\\", ButtonStyle->\\\"Link\\\", ButtonFrame->None, \
+ButtonData:>\\\"paclet:ref/message/Solve/ifun\\\", ButtonNote -> \
+\\\"Solve::ifun\\\"]\\)\"\>"}]], "Message", "MSG",
+ CellChangeTimes->{3.540242070501624*^9}],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{"{", 
+   RowBox[{"x", "\[Rule]", "0"}], "}"}], "}"}]], "Output",
+ CellChangeTimes->{3.540242070503824*^9}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Manipulate", "[", 
+  RowBox[{
+   RowBox[{"Plot", "[", 
+    RowBox[{
+     RowBox[{"With", "[", 
+      RowBox[{
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"s", "=", "1"}], ",", 
+         RowBox[{"\[Eta]", "=", "1"}]}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{
+          RowBox[{"Exp", "[", 
+           RowBox[{
+            RowBox[{"\[Beta]", 
+             RowBox[{"(", 
+              RowBox[{
+               SuperscriptBox[
+                RowBox[{"(", 
+                 RowBox[{"1", "+", 
+                  SuperscriptBox["x", "2"]}], ")"}], 
+                RowBox[{"1", "/", "2"}]], "-", "1"}], ")"}]}], "-", 
+            "\[Eta]"}], "]"}], "+", "1"}], ",", 
+         FractionBox[
+          SuperscriptBox["x", "2"], 
+          RowBox[{
+           RowBox[{"Exp", "[", 
+            RowBox[{
+             RowBox[{"\[Beta]", 
+              RowBox[{"(", 
+               RowBox[{
+                SuperscriptBox[
+                 RowBox[{"(", 
+                  RowBox[{"1", "+", 
+                   SuperscriptBox["x", "2"]}], ")"}], 
+                 RowBox[{"1", "/", "2"}]], "-", "1"}], ")"}]}], "-", 
+             "\[Eta]"}], "]"}], "+", "1"}]]}], "}"}]}], "]"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"x", ",", "0", ",", "10"}], "}"}]}], "]"}], ",", 
+   RowBox[{"{", 
+    RowBox[{"\[Beta]", ",", "0.001", ",", "10"}], "}"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.540242079722973*^9, 3.54024219338834*^9}, {
+  3.5402424542184563`*^9, 3.540242600331916*^9}}],
+
+Cell[BoxData[
+ TagBox[
+  StyleBox[
+   DynamicModuleBox[{$CellContext`\[Beta]$$ = 0.001, Typeset`show$$ = True, 
+    Typeset`bookmarkList$$ = {}, Typeset`bookmarkMode$$ = "Menu", 
+    Typeset`animator$$, Typeset`animvar$$ = 1, Typeset`name$$ = 
+    "\"untitled\"", Typeset`specs$$ = {{
+      Hold[$CellContext`\[Beta]$$], 0.001, 10}}, Typeset`size$$ = {
+    360., {112., 117.}}, Typeset`update$$ = 0, Typeset`initDone$$, 
+    Typeset`skipInitDone$$ = True, $CellContext`\[Beta]$10319$$ = 0}, 
+    DynamicBox[Manipulate`ManipulateBoxes[
+     1, StandardForm, "Variables" :> {$CellContext`\[Beta]$$ = 0.001}, 
+      "ControllerVariables" :> {
+        Hold[$CellContext`\[Beta]$$, $CellContext`\[Beta]$10319$$, 0]}, 
+      "OtherVariables" :> {
+       Typeset`show$$, Typeset`bookmarkList$$, Typeset`bookmarkMode$$, 
+        Typeset`animator$$, Typeset`animvar$$, Typeset`name$$, 
+        Typeset`specs$$, Typeset`size$$, Typeset`update$$, Typeset`initDone$$,
+         Typeset`skipInitDone$$}, "Body" :> Plot[
+        With[{$CellContext`s$ = 1, $CellContext`\[Eta]$ = 1}, {
+         Exp[$CellContext`\[Beta]$$ ((1 + $CellContext`x^2)^(1/2) - 
+              1) - $CellContext`\[Eta]$] + 1, $CellContext`x^2/(
+          Exp[$CellContext`\[Beta]$$ ((1 + $CellContext`x^2)^(1/2) - 
+              1) - $CellContext`\[Eta]$] + 1)}], {$CellContext`x, 0, 10}], 
+      "Specifications" :> {{$CellContext`\[Beta]$$, 0.001, 10}}, 
+      "Options" :> {}, "DefaultOptions" :> {}],
+     ImageSizeCache->{403., {154., 160.}},
+     SingleEvaluation->True],
+    Deinitialization:>None,
+    DynamicModuleValues:>{},
+    SynchronousInitialization->True,
+    UnsavedVariables:>{Typeset`initDone$$},
+    UntrackedVariables:>{Typeset`size$$}], "Manipulate",
+   Deployed->True,
+   StripOnInput->False],
+  Manipulate`InterpretManipulate[1]]], "Output",
+ CellChangeTimes->{{3.540242113435206*^9, 3.5402421200259132`*^9}, {
+  3.540242151609909*^9, 3.5402421936859694`*^9}, {3.5402424735127296`*^9, 
+  3.540242552502822*^9}, {3.540242589117484*^9, 3.540242600733674*^9}}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"NMaximize", "[", 
+  RowBox[{
+   FractionBox[
+    SuperscriptBox["x", "2"], 
+    RowBox[{
+     RowBox[{"Exp", "[", 
+      RowBox[{
+       RowBox[{"\[Beta]", 
+        RowBox[{"(", 
+         RowBox[{
+          SuperscriptBox[
+           RowBox[{"(", 
+            RowBox[{"1", "+", 
+             SuperscriptBox["x", "2"]}], ")"}], 
+           RowBox[{"1", "/", "2"}]], "-", "1"}], ")"}]}], "-", "\[Eta]"}], 
+      "]"}], "+", "1"}]], ",", "x"}], "]"}]], "Input",
+ CellChangeTimes->{{3.540242613494898*^9, 3.540242660386649*^9}}],
+
+Cell[BoxData[
+ RowBox[{"Maximize", "[", 
+  RowBox[{
+   FractionBox[
+    SuperscriptBox["x", "2"], 
+    RowBox[{"1", "+", 
+     SuperscriptBox["\[ExponentialE]", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"(", 
+         RowBox[{
+          RowBox[{"-", "1"}], "+", 
+          SqrtBox[
+           RowBox[{"1", "+", 
+            SuperscriptBox["x", "2"]}]]}], ")"}], " ", "\[Beta]"}], "-", 
+       "\[Eta]"}]]}]], ",", "x"}], "]"}]], "Output",
+ CellChangeTimes->{{3.540242642961973*^9, 3.54024265232341*^9}}]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Limit", "[", 
+  RowBox[{
+   FractionBox[
+    SuperscriptBox["x", "2"], 
+    RowBox[{
+     RowBox[{"Exp", "[", 
+      RowBox[{
+       RowBox[{"\[Beta]", 
+        RowBox[{"(", 
+         RowBox[{
+          SuperscriptBox[
+           RowBox[{"(", 
+            RowBox[{"1", "+", 
+             SuperscriptBox["x", "2"]}], ")"}], 
+           RowBox[{"1", "/", "2"}]], "-", "1"}], ")"}]}], "-", "\[Eta]"}], 
+      "]"}], "+", "1"}]], ",", 
+   RowBox[{"\[Beta]", "\[Rule]", "\[Infinity]"}]}], "]"}]], "Input",
+ CellChangeTimes->{{3.540253850442337*^9, 3.540253855756937*^9}, {
+  3.5402538886457148`*^9, 3.540253912710352*^9}}],
+
+Cell[BoxData[
+ RowBox[{"Limit", "[", 
+  RowBox[{
+   FractionBox[
+    SuperscriptBox["x", "2"], 
+    RowBox[{"1", "+", 
+     SuperscriptBox["\[ExponentialE]", 
+      RowBox[{
+       RowBox[{
+        RowBox[{"(", 
+         RowBox[{
+          RowBox[{"-", "1"}], "+", 
+          SqrtBox[
+           RowBox[{"1", "+", 
+            SuperscriptBox["x", "2"]}]]}], ")"}], " ", "\[Beta]"}], "-", 
+       "\[Eta]"}]]}]], ",", 
+   RowBox[{"\[Beta]", "\[Rule]", "\[Infinity]"}]}], "]"}]], "Output",
+ CellChangeTimes->{3.5402538585343733`*^9, 3.540253915671377*^9}]
 }, Open  ]]
 },
 WindowSize->{1057, 762},
@@ -982,55 +1338,77 @@ CellTagsIndex->{}
 (*NotebookFileOutline
 Notebook[{
 Cell[CellGroupData[{
-Cell[579, 22, 2721, 80, 261, "Input"],
-Cell[3303, 104, 404, 6, 30, "Output"],
-Cell[3710, 112, 403, 6, 30, "Output"],
-Cell[4116, 120, 403, 6, 30, "Output"]
+Cell[579, 22, 2769, 80, 261, "Input"],
+Cell[3351, 104, 453, 7, 30, "Output"],
+Cell[3807, 113, 455, 7, 30, "Output"],
+Cell[4265, 122, 453, 7, 30, "Output"]
 }, Open  ]],
-Cell[4534, 129, 5194, 165, 365, "Input"],
+Cell[4733, 132, 5194, 165, 365, "Input"],
 Cell[CellGroupData[{
-Cell[9753, 298, 689, 16, 27, "Input"],
-Cell[10445, 316, 4506, 78, 246, "Output"]
+Cell[9952, 301, 689, 16, 27, "Input"],
+Cell[10644, 319, 4506, 78, 246, "Output"]
 }, Open  ]],
-Cell[14966, 397, 1783, 48, 73, "Input"],
+Cell[15165, 400, 1783, 48, 73, "Input"],
 Cell[CellGroupData[{
-Cell[16774, 449, 1362, 28, 88, "Input"],
-Cell[18139, 479, 500, 7, 27, "Output"],
-Cell[18642, 488, 480, 6, 27, "Output"],
-Cell[19125, 496, 501, 7, 30, "Output"]
-}, Open  ]],
-Cell[CellGroupData[{
-Cell[19663, 508, 406, 10, 27, "Input"],
-Cell[20072, 520, 716, 20, 33, "Output"]
+Cell[16973, 452, 1362, 28, 88, "Input"],
+Cell[18338, 482, 500, 7, 27, "Output"],
+Cell[18841, 491, 480, 6, 27, "Output"],
+Cell[19324, 499, 501, 7, 30, "Output"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[20825, 545, 360, 11, 53, "Input"],
-Cell[21188, 558, 255, 3, 27, "Output"]
+Cell[19862, 511, 406, 10, 27, "Input"],
+Cell[20271, 523, 716, 20, 33, "Output"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[21480, 566, 1807, 39, 238, "Input"],
-Cell[23290, 607, 1209, 30, 33, "Output"],
-Cell[24502, 639, 1282, 32, 33, "Output"],
-Cell[25787, 673, 1279, 32, 33, "Output"]
+Cell[21024, 548, 360, 11, 53, "Input"],
+Cell[21387, 561, 255, 3, 27, "Output"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[27103, 710, 1191, 34, 100, "Input"],
-Cell[28297, 746, 525, 16, 63, "Output"],
-Cell[28825, 764, 352, 10, 52, "Output"]
+Cell[21679, 569, 1807, 39, 238, "Input"],
+Cell[23489, 610, 1209, 30, 33, "Output"],
+Cell[24701, 642, 1282, 32, 33, "Output"],
+Cell[25986, 676, 1279, 32, 33, "Output"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[29214, 779, 1079, 32, 64, "Input"],
-Cell[30296, 813, 2383, 47, 361, "Output"]
-}, Open  ]],
-Cell[32694, 863, 595, 19, 64, "Input"],
-Cell[CellGroupData[{
-Cell[33314, 886, 1535, 40, 73, "Input"],
-Cell[34852, 928, 560, 16, 33, "Output"]
+Cell[27302, 713, 1191, 34, 100, "Input"],
+Cell[28496, 749, 525, 16, 63, "Output"],
+Cell[29024, 767, 352, 10, 52, "Output"]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[35449, 949, 307, 7, 43, "Input"],
-Cell[35759, 958, 115, 1, 27, "Output"],
-Cell[35877, 961, 132, 2, 27, "Output"]
+Cell[29413, 782, 1079, 32, 64, "Input"],
+Cell[30495, 816, 2380, 47, 431, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[32912, 868, 1021, 32, 56, "Input"],
+Cell[33936, 902, 2211, 43, 377, "Output"]
+}, Open  ]],
+Cell[36162, 948, 595, 19, 64, "Input"],
+Cell[CellGroupData[{
+Cell[36782, 971, 1535, 40, 73, "Input"],
+Cell[38320, 1013, 560, 16, 33, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[38917, 1034, 307, 7, 43, "Input"],
+Cell[39227, 1043, 115, 1, 27, "Output"],
+Cell[39345, 1046, 132, 2, 27, "Output"]
+}, Open  ]],
+Cell[39492, 1051, 690, 21, 56, "Input"],
+Cell[CellGroupData[{
+Cell[40207, 1076, 1672, 52, 119, InheritFromParent],
+Cell[41882, 1130, 531, 11, 23, "Message"],
+Cell[42416, 1143, 145, 4, 27, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[42598, 1152, 1525, 44, 56, "Input"],
+Cell[44126, 1198, 2040, 38, 331, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[46203, 1241, 548, 17, 56, "Input"],
+Cell[46754, 1260, 509, 16, 63, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[47300, 1281, 641, 19, 56, "Input"],
+Cell[47944, 1302, 553, 17, 63, "Output"]
 }, Open  ]]
 }
 ]
