@@ -194,7 +194,7 @@ def eos_eval(D, kT, Ye, component):
     Parameters:
     --------------------------------------------------------
 
-    component : A list of terms to be included. May contain:
+    component : A term or list of terms to be included. May contain:
 
     ["electrons", "positrons", "photons", "neutrinos"]
 
@@ -202,6 +202,7 @@ def eos_eval(D, kT, Ye, component):
     kT  : temperature (MeV)
     Ye  : proton/electron fraction
     """
+    if type(component) is str: component = [component]
 
     n = 0.0
     p = 0.0

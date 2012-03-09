@@ -18,7 +18,9 @@ def load_eos3(fname):
     Notes:
     --------------------------------------------------------
 
-    user guide at http://user.numazu-ct.ac.jp/~sumi/eos/table2/guide_EOS3.pdf
+    See the following URL for the eos3 user guide:
+
+    http://user.numazu-ct.ac.jp/~sumi/eos/table2/guide_EOS3.pdf
     """
     import numpy as np
 
@@ -71,5 +73,22 @@ def write_hdf5(table, fname, cols="all"):
 
     h5f = h5py.File(fname, "w")
 
+    cols = [c for c in col_names if c in cols or cols == "all"]
+
     for col in col_names:
         h5f[col] = table[:,:,:,var_index[col]]
+
+
+def read_hdf5(fname, cols="all"):
+    import h5py
+    print "reading Shen table from", fname
+
+    h5f = h5py.File(fname, "r")
+    table = { }
+
+    cols = [c for c in col_names if c in cols or cols == "all"]
+
+    for col in cols:
+        table[col] = h5f[col].value
+
+    return table

@@ -20,20 +20,19 @@ def test_large_beta():
     plt.show()
 
 
-def test_compare_pressure(D=1e13):
-    temp = np.logspace(0.5, 1.8, 20)
+def test_compare_pressure(D=1e13, Ye=0.08, T0=5.0, T1=80.0):
+    """
+    Plots the pressure for various components of the EOS.
+    """
+    temp = np.logspace(np.log10(T0), np.log10(T1), 20)
 
-    pos = [eos_eval(D, T, 0.08, ["positrons"])[1] for T in temp]
-    plt.loglog(temp, pos, '-x', label=r"$e_+$")
+    for comp, tex, ls in [("positrons", r"$e_+$", '--'),
+                          ("electrons", r"$e_-$", '-.'),
+                          ("photons", r"$\gamma$", '-x'),
+                          ("cold_electrons", r"$e_-$, cold", '-o')]:
 
-    pho = [eos_eval(D, T, 0.08, ["photons"])[1] for T in temp]
-    plt.loglog(temp, pho, '--', label=r"$\gamma$")
-
-    ele = [eos_eval(D, T, 0.08, ["electrons"])[1] for T in temp]
-    plt.loglog(temp, ele, '-o', label=r"$e_-$")
-
-    cle = [eos_eval(D, T, 0.08, ["cold_electrons"])[1] for T in temp]
-    plt.loglog(temp, cle, '-x', label=r"$e_-$, cold")
+        p = [eos_eval(D, T, Ye, comp)[1] for T in temp]
+        plt.loglog(temp, p, ls, label=tex)
 
     plt.xlabel(r"$k_B T$", fontsize=16)
     plt.ylabel(r"$p(\rho,T) \ \rm{MeV/fm^3}$", fontsize=16)
@@ -43,20 +42,35 @@ def test_compare_pressure(D=1e13):
 
 def test_load_shen():
     from eospy import shen
+    """
     table = shen.load_eos3("data/eos3.tab")
-
     shen.write_hdf5(table, "data/shen.hdf5")
-    return
+    """
+    table = shen.read_hdf5("data/shen.hdf5", cols=['log10_rhoB', 'logT', 'p', 'Yp'])
 
-    dens = 10**table[1,:,0,var_index['log10_rhoB']]
-    pres =     table[1,:,0,var_index['p']]
+    iY = 0
+    iD = 80
+
+    D = 10**table['log10_rhoB'][0,iD,iY]
+    T = 10**table['logT'      ][:,iD,iY]
+    Y =     table['Yp'        ][0,iD,iY]
+    p =     table['p'         ][:,iD,iY]
+    plt.loglog(T, p, '-.', label="nucleons")
+
+    for comp, tex, ls in [("positrons", r"$e_+$", '--'),
+                          ("electrons", r"$e_-$", '-.'),
+                          ("photons", r"$\gamma$", '-x'),
+                          ("cold_electrons", r"$e_-$, cold", '-o')]:
+
+        p = [eos_eval(D, Ti, Y, comp)[1] for Ti in T]
+        plt.loglog(T, p, ls, label=tex)
 
     plt.xlabel(r"$k_B T$", fontsize=16)
     plt.ylabel(r"$p(\rho,T) \ \rm{MeV/fm^3}$", fontsize=16)
-    plt.loglog(dens, pres, '-.')
+    plt.legend(loc='best')
     plt.show()
 
 
 if __name__ == "__main__":
-    #test_compare_pressure()
+    #test_compare_pressure(T0=2.0, T1=90)
     test_load_shen()
