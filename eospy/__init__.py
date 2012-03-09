@@ -2,7 +2,7 @@
 
 import numpy as np
 from scipy.integrate import quadpack
-from scipy.optimize import newton
+from scipy.optimize import newton, brentq
 
 
 LIGHT_SPEED      = 2.997924580e+10; # cm/s
@@ -94,6 +94,7 @@ def evaluate_term(key, sgn, eta, beta, massless=False):
     terms = massless_terms if massless else massive_terms
     pdf, val = terms["pdf"], terms[key]
     f = lambda x: val(x, sgn, eta, beta) * pdf(x, sgn, eta, beta)
+
     res = quadpack.quad(f, 0.0, quadpack.Inf)
     return res[0]
 
@@ -110,21 +111,19 @@ def solve_eta_pairs(beta, C):
     beta : mc^2 / kT    ... dimensionless inverse temperature
     C    :              ... dimensionless number density
     """
-    def f1(eta):
+    def f(eta):
         """
         ne(e,b) - np(e,b) = C
         """
         return \
             evaluate_term("number_density", +1, eta, beta) - \
             evaluate_term("number_density", -1, eta, beta) - C
-    def f2(eta):
-        """
-        ne(e,b) = C, assume np -> 0.0 for large beta
-        """
-        return \
-            evaluate_term("number_density", +1, eta, beta) - C
-    f = f1 if beta < 10.0 else f2
-    return newton(f, 0.0)
+
+    bracket = 1.0
+    while f(bracket) * f(-bracket) > 1.0: bracket *= 2.0
+
+    return brentq(f, -bracket, bracket, disp=True)
+
 
 
 def solve_eta_neutrinos(C):
@@ -218,6 +217,12 @@ def eos_eval(D, kT, Ye, component):
         a = pow(np.pi, 2) / (15*np.power(HBAR_C, 3))
         n += 0.0
         p += a * np.power(kT, 4) / 3.0
+        u += a * np.power(kT, 4)
+
+    if "hot_pairs" in component:
+        a = pow(np.pi, 2) / (15*np.power(HBAR_C, 3))
+        n += 0.0
+        p += a * np.power(kT, 4) * 7./11.
         u += a * np.power(kT, 4)
 
     return n, p, u
