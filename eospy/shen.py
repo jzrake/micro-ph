@@ -1,7 +1,7 @@
 
 
-col_names = ['log10_rhoB', 'nB', 'Yp', 'F', 'Eint', 'S', 'A', 'Z',
-                 'MN', 'Xn', 'Xp', 'Xa', 'XA', 'p', 'un', 'up', 'ML', 'XL']
+col_names = ['logT', 'log10_rhoB', 'nB', 'Yp', 'F', 'Eint', 'S', 'A', 'Z',
+             'MN', 'Xn', 'Xp', 'Xa', 'XA', 'p', 'un', 'up', 'ML', 'XL']
 var_index = { n:i for i,n in enumerate(col_names) }
 
 def load_eos3(fname):
@@ -12,7 +12,7 @@ def load_eos3(fname):
     Returns:
     --------------------------------------------------------
 
-    A (90 x 110 x 65 x 18) numpy array. The axes are (T,D,Yp,q) where q is the
+    A (91 x 110 x 65 x 19) numpy array. The axes are (T,D,Yp,q) where q is the
     quantity given by the col_names list or var_index dictionary.
 
     Notes:
@@ -25,7 +25,7 @@ def load_eos3(fname):
     iT, iD, iY = -1, -1, -1
 
     shen_file = open(fname, 'r')
-    table_dims = (2, 110, 65, 18)
+    table_dims = (91, 110, 65, 19)
     table = np.zeros(table_dims)
 
     for line in shen_file:
@@ -52,7 +52,7 @@ def load_eos3(fname):
             print "parsing block with T=%f MeV" % T
 
         elif action == 'read_data_line':
-            data = [float(x) for x in line.split()]
+            data = [float(logT)] + [float(x) for x in line.split()]
             D = float(data[var_index['log10_rhoB']])
             iD += 1
             table[iT, iD, iY] = data
@@ -60,8 +60,15 @@ def load_eos3(fname):
     return table
 
 
-def write_hdf5(table, fname):
+def write_hdf5(table, fname, cols="all"):
+    """
+    Writes the Shen table, represented as the numpy array 'table' to the hdf5
+    file 'fname'. One dataset is created for each column requested in 'cols',
+    which defaults to all available data.
+    """
     import h5py
+    print "writing Shen table to", fname
+
     h5f = h5py.File(fname, "w")
 
     for col in col_names:

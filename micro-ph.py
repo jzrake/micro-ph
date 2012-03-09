@@ -43,7 +43,7 @@ def test_compare_pressure(D=1e13):
 
 def test_load_shen():
     from eospy import shen
-    table = shen.load_eos3("data/eos3_mini.tab")
+    table = shen.load_eos3("data/eos3.tab")
 
     shen.write_hdf5(table, "data/shen.hdf5")
     return
