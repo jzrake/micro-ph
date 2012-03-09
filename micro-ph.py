@@ -71,6 +71,14 @@ def test_load_shen():
     plt.show()
 
 
+def test_sample():
+    from eospy import shen
+    table = shen.read_hdf5("data/shen.hdf5", cols=['log10_rhoB', 'logT', 'p', 'Yp'])
+    print shen.sample(table, 'p', 0.1, 10**5.1, 0.01)
+    #print shen.sample(None, 13, 10.0, 0.08)
+
+
 if __name__ == "__main__":
     #test_compare_pressure(T0=2.0, T1=90)
-    test_load_shen()
+    #test_load_shen()
+    test_sample()

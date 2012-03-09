@@ -1,5 +1,8 @@
 
 
+from scipy import ndimage
+import numpy as np
+
 col_names = ['logT', 'log10_rhoB', 'nB', 'Yp', 'F', 'Eint', 'S', 'A', 'Z',
              'MN', 'Xn', 'Xp', 'Xa', 'XA', 'p', 'un', 'up', 'ML', 'XL']
 var_index = { n:i for i,n in enumerate(col_names) }
@@ -92,3 +95,18 @@ def read_hdf5(fname, cols="all"):
         table[col] = h5f[col].value
 
     return table
+
+
+def sample(table, col, T, D, Y):
+    """
+    Samples the EOS table using interpolation.
+    """
+    logT0, logT1 = table['logT'      ][0,0,0], table['logT'      ][-1,0,0]
+    logD0, logD1 = table['log10_rhoB'][0,0,0], table['log10_rhoB'][0,-1,0]
+    Y0   ,    Y1 = table['Yp'        ][0,0,0], table['Yp'        ][0,0,-1]
+
+    x = (np.log10(T) - logT0) * (logT1 - logT0)
+    y = (np.log10(D) - logD0) * (logD1 - logD0)
+    z = (Y - Y0) * (Y1 - Y0)
+
+    return ndimage.map_coordinates(table[col], [[x],[y],[z]], order=1)
