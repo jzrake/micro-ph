@@ -44,6 +44,10 @@
 
 from scipy import ndimage
 import numpy as np
+import h5py
+
+
+__all__ = ["load_eos3", "write_hdf5", "read_hdf5", "rebuild_hdf5", "sample"]
 
 
 col_names = ['logT', 'log10_rhoB', 'nB', 'Yp', 'F', 'Eint', 'S', 'A', 'Z',
@@ -53,8 +57,8 @@ var_index = { n:i for i,n in enumerate(col_names) }
 
 def load_eos3(fname):
     """
-    Loads the 'eos3' tabulated nuclear equation of state due to Shen from the
-    ascii 'fname'.
+    Parses the ascii file 'fname' for the *eos3* tabulated nuclear equation of
+    state due to Shen et. al. (1998). May take a couple minutes to run.
 
     Returns:
     --------------------------------------------------------
@@ -69,8 +73,6 @@ def load_eos3(fname):
 
     http://user.numazu-ct.ac.jp/~sumi/eos/table2/guide_EOS3.pdf
     """
-    import numpy as np
-
     iD, iT, iY = -1, -1, -1
 
     shen_file = open(fname, 'r')
@@ -115,7 +117,6 @@ def write_hdf5(table, fname, cols="all"):
     file 'fname'. One dataset is created for each column requested in 'cols',
     which defaults to all available data.
     """
-    import h5py
     print "writing Shen table to", fname
 
     h5f = h5py.File(fname, "w")
@@ -125,9 +126,11 @@ def write_hdf5(table, fname, cols="all"):
     for col in col_names:
         h5f[col] = table[:,:,:,var_index[col]]
 
+    h5f.close()
+    return None
+
 
 def read_hdf5(fname, cols="all"):
-    import h5py
     print "reading Shen table from", fname
 
     h5f = h5py.File(fname, "r")
@@ -138,10 +141,11 @@ def read_hdf5(fname, cols="all"):
     for col in cols:
         table[col] = h5f[col].value
 
+    h5f.close()
     return table
 
 
-def rebuild_hdf5_table(ascii, h5, cols="all"):
+def rebuild_hdf5(ascii, h5, cols="all"):
     """
     Convenience function, eads the ASCII table from 'ascii' and writes 'cols' to
     hdf5 formatted 'h5'.
@@ -154,12 +158,15 @@ def sample(table, col, D, T, Y, order=3):
     """
     Samples the EOS table using interpolation.
     """
+
+    nD, nT, nY = table['p'].shape
+
     logD0, logD1 = table['log10_rhoB'][0,0,0], table['log10_rhoB'][-1,0,0]
     logT0, logT1 = table['logT'      ][0,0,0], table['logT'      ][0,-1,0]
     Y0   ,    Y1 = table['Yp'        ][0,0,0], table['Yp'        ][0,0,-1]
 
-    x = (np.log10(D) - logD0) * (logD1 - logD0)
-    y = (np.log10(T) - logT0) * (logT1 - logT0)
-    z = (Y - Y0) * (Y1 - Y0)
+    x = (np.log10(D) - logD0) / (logD1 - logD0) * nD
+    y = (np.log10(T) - logT0) / (logT1 - logT0) * nT
+    z = (Y - Y0) / (Y1 - Y0) * nY
 
-    return ndimage.map_coordinates(table[col], [[x],[y],[z]], order=order)
+    return ndimage.map_coordinates(table[col], [[x],[y],[z]], order=order)[0]

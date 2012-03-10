@@ -16,13 +16,15 @@ def test_compare_pressure(D=1e13, T0=5.0, T1=80.0, Ye=0.08):
     """
     Plots the pressure for various components of the EOS.
     """
-    temp = np.logspace(np.log10(T0), np.log10(T1), 20)
+    temp = np.logspace(np.log10(T0), np.log10(T1), 60)
 
-    for comp, tex, ls in [("positrons", r"$e_+$", '--'),
+    for comp, tex, ls in [("nucleons", r"$n$ (shen)", '-'),
+                          ("positrons", r"$e_+$", '--'),
                           ("electrons", r"$e_-$", '-.'),
                           ("photons", r"$\gamma$", '-x'),
-                          ("cold_electrons", r"$e_-$, cold", '-o')]:
+                          ("cold_electrons", r"$e_-$, cold", ':')]:
 
+        print "Working out component", comp
         p = [physics.eos(D, T, Ye, comp)[1] for T in temp]
         plt.loglog(temp, p, ls, label=tex)
 

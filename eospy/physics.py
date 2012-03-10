@@ -1,8 +1,9 @@
 
 import numpy as np
+import shen
 from fermion import *
 
-__all__ = ["eos", "convert_beta_to_T", "eval_pairs"]
+__all__ = ["eos", "convert_beta_to_T"]
 
 
 
@@ -14,7 +15,7 @@ PROTON_MASS      = 9.382720462e+02 # MeV
 MEV_TO_ERG       = 1.602176487e-06
 FM3_TO_CM3       = 1.000000000e-39
 
-
+ShenNucleonTable = { "table": None }
 
 def eval_pairs(D, kT, Ye, sgn):
     """
@@ -81,11 +82,15 @@ def eos(D, kT, Ye, component):
 
     if "electrons" in component:
         ev = eval_pairs(D, kT, Ye, +1)
-        n += ev[0]; p += ev[1]; u += ev[2]
+        n += ev[0]
+        p += ev[1]
+        u += ev[2]
 
     if "positrons" in component:
         ev = eval_pairs(D, kT, Ye, -1)
-        n += ev[0]; p += ev[1]; u += ev[2]
+        n += ev[0]
+        p += ev[1]
+        u += ev[2]
 
     if "photons" in component:
         a = pow(np.pi, 2) / (15*np.power(HBAR_C, 3))
@@ -109,6 +114,18 @@ def eos(D, kT, Ye, component):
         n += ne
         p += (num/den) * las
         u += 0.0 # not implemented yet
+
+    if "nucleons" in component:
+
+        if ShenNucleonTable["table"] is None:
+            cols = ['log10_rhoB', 'logT', 'Yp', 'p', 'nB', 'Eint']
+            ShenNucleonTable["table"] = shen.read_hdf5("data/eos3.h5", cols=cols)
+
+        table = ShenNucleonTable["table"]
+
+        n += shen.sample(table, 'nB'  , D, kT, Ye)
+        p += shen.sample(table, 'p'   , D, kT, Ye)
+        u += shen.sample(table, 'Eint', D, kT, Ye)
 
     return n, p, u
 
