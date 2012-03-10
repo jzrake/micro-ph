@@ -125,12 +125,10 @@ def solve_eta_pairs(beta, C):
     --------------------------------------------------------
 
     beta : mc^2 / kT    ... dimensionless inverse temperature
-    C    :              ... dimensionless number density
+    C    : n * V0       ... dimensionless number density
     """
     def f(eta):
-        """
-        ne(e,b) - np(e,b) = C
-        """
+        """ ne(e,b) - np(e,b) = C """
         return \
             evaluate_term("number_density", +1, eta, beta) - \
             evaluate_term("number_density", -1, eta, beta) - C
@@ -150,7 +148,7 @@ def solve_eta_neutrinos(C):
     Parameters:
     --------------------------------------------------------
 
-    C    :              ... dimensionless number density
+    C    : n * V0       ... dimensionless number density
     """
     def f(eta):
         return evaluate_n(+1, eta, beta) - C
