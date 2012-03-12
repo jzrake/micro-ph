@@ -2,11 +2,12 @@
 
 
 from matplotlib import pyplot as plt
+from scipy.integrate import quadpack
 import numpy as np
 import timmes.fdfunc
 
 
-__all__ = [ ]
+__all__ = ["test_fdintegrand"]
 
 
 def fdfunc1(x, n, eta, beta, use_timmes=False):
@@ -20,8 +21,16 @@ def fdfunc1(x, n, eta, beta, use_timmes=False):
         return np.power(x,n) * np.sqrt(1 + 0.5*x*beta) / (np.exp(x-eta) + 1)
 
 
-def test_fdintegrand(use_timmes=False):
+def dfermi(n, eta, beta, use_timmes=False):
+    res = quadpack.quad(fdfunc1, 0.0, quadpack.Inf, args=(n,eta,beta,False))
+    return res[0]
 
+
+def test_fdintegrand(use_timmes=False):
+    """
+    Plots the Fermi-Dirac integrand f_0(x,eta,beta) for several values of the
+    chemical potential eta, and
+    """
     for c,e in zip("rgby", [1.0, 2.0, 10.0, 100.0]):
         x = np.linspace(0,5*e,1000)
         y0 = [fdfunc1(xi, 0.0, e, 0.0, use_timmes) for xi in x]
@@ -38,3 +47,13 @@ def test_fdintegrand(use_timmes=False):
     plt.legend(loc='best')
     plt.show()
 
+
+def test_fdintegral(use_timmes=False):
+    """
+    Tests whether the integral of the Fermi-Dirac function F_n is in agreement
+    with the evaluation of Timmes's code.
+    """
+    for n in [-0.5, 0.5, 2.0, 3.0]:
+        mine = dfermi(n, 1.0, 1.0)
+        timm = timmes.fdfunc.dfermi(n, 1.0, 1.0)[0]
+        print "n=%f, F=%f (%f)" % (n, mine, timm)
