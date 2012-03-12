@@ -15,12 +15,14 @@
  * (+) Sekiguchi (2010)
  *     http://arxiv.org/abs/1009.3320
  *
- * (+) Kothari (1941)
- *     http://www.jstor.org/stable/97729
- *
  * (+) Beaudet & Tassoul (1971)
  *     http://adsabs.harvard.edu/abs/1971A%26A....13..209B
  *
+ * (+) Tooper (1969)
+ *     http://adsabs.harvard.edu/full/1969ApJ...156.1075T
+ *
+ * (+) Kothari (1941)
+ *     http://www.jstor.org/stable/97729
  *
  * NOTES:
  *

@@ -12,6 +12,27 @@ __all__ = ["test_compare_pressure",
            "test_sample"]
 
 
+def test_pressure_vs_density(Ye=0.08):
+    """
+    Plots the pressure for various components of the EOS.
+    """
+    temp = np.logspace(5.0, 10.0, 5)
+    dens = np.logspace(-3, 11, 10)
+
+    for comp, tex, ls in [("electrons", r"$e_-$", '-.'),
+                          ("cold_electrons", r"$e_-$, cold", ':')]:
+        for T in temp:
+            print "Working out component", comp
+            p = [physics.eos(D, T, Ye, comp)[1] for D in dens]
+            plt.loglog(dens, p, ls, label=tex)
+
+    plt.xlabel(r"$\rho$", fontsize=16)
+    plt.ylabel(r"$p(\rho,T) \ \rm{MeV/fm^3}$", fontsize=16)
+    plt.legend(loc='lower right')
+    plt.show()
+
+
+
 def test_compare_pressure(D=1e13, T0=5.0, T1=80.0, Ye=0.08, terms="all"):
     """
     Plots the pressure for various components of the EOS.
