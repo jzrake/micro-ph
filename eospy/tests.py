@@ -16,19 +16,21 @@ def test_pressure_vs_density(Ye=0.08):
     """
     Plots the pressure for various components of the EOS.
     """
-    temp = np.logspace(5.0, 10.0, 6) # in Kelvins
+    temp = np.logspace(5.0, 10.0, 3) # in Kelvins
     dens = np.logspace(-3, 14, 100)
 
     for T in temp:
         kT = T * physics.BOLTZMANN_CONSTANT
         npumu = [physics.eos(D, kT, Ye, "electrons") for D in dens]
         p  = [n[1] for n in npumu]
-        plt.loglog(dens, mu, '-', lw=1.5)
-        plt.loglog(dens, p, '-', lw=1.5, label=r"$T=10^{%d}\rm{K}$" % np.log10(T))
+        plt.loglog(dens, p, '-', lw=0.8, label=r"$T=10^{%d}\rm{K}$" % np.log10(T))
 
-    cold = [physics.eos(D, kT, Ye, "cold_electrons")[1] for D in dens]
+    cold  = [physics.eos(D, kT, Ye, "cold_electrons")[1] for D in dens]
+    plt.loglog(dens, cold, c='k', ls=':', label=r"cold $e_-$ $\propto n_e^{5/3}$")
 
-    plt.loglog(dens, cold, c='k', ls=':', label=r"cold $e_-$")
+    dense = [physics.eos(D, kT, Ye, "dense_electrons")[1] for D in dens]
+    plt.loglog(dens, dense, c='r', ls='--', lw=3.0, label=r"dense $e_-$ $\propto n_e^{4/3}$")
+
     plt.xlabel(r"$\rho \ \rm{g/cm^3}$", fontsize=16)
     plt.ylabel(r"$p(\rho,T) \ \rm{MeV/fm^3}$", fontsize=16)
     plt.legend(loc='lower right')

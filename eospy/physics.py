@@ -106,8 +106,9 @@ def eos(D, kT, Ye, component):
         mu += 0.0
 
     if "cold_electrons" in component:
-        # http://scienceworld.wolfram.com/physics/ElectronDegeneracyPressure.html
-
+        """
+        http://scienceworld.wolfram.com/physics/ElectronDegeneracyPressure.html
+        """
         Erest = D * LIGHT_SPEED*LIGHT_SPEED * FM3_TO_CM3 / MEV_TO_ERG
         ne = Ye * Erest / ATOMIC_MASS_UNIT
 
@@ -117,6 +118,15 @@ def eos(D, kT, Ye, component):
 
         n += ne
         p += (num/den) * las
+        u += 0.0 # not implemented yet
+        mu += 0.0 # not implemented yet
+
+    if "dense_electrons" in component:
+        Erest = D * LIGHT_SPEED*LIGHT_SPEED * FM3_TO_CM3 / MEV_TO_ERG
+        ne = Ye * Erest / ATOMIC_MASS_UNIT
+
+        n += ne
+        p += 0.123 * 2*np.pi * HBAR_C * np.power(ne, 4./3.)
         u += 0.0 # not implemented yet
         mu += 0.0 # not implemented yet
 
