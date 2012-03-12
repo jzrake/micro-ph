@@ -1,0 +1,4 @@
+to compile and run :
+
+% ifort test_clout.f90  -o test_clout.exe
+% ./test_clout.exe 
