@@ -21,7 +21,7 @@ def fdfunc1(x, n, eta, beta, use_timmes=False):
         return np.power(x,n) * np.sqrt(1 + 0.5*x*beta) / (np.exp(x-eta) + 1)
 
 
-def dfermi(n, eta, beta, use_timmes=False):
+def dfermi(n, eta, beta):
     res = quadpack.quad(fdfunc1, 0.0, quadpack.Inf, args=(n,eta,beta,False))
     return res[0]
 

@@ -40,12 +40,12 @@ def eval_pairs(D, kT, Ye, sgn):
     """
     c2 = LIGHT_SPEED*LIGHT_SPEED
     Volume = np.power(np.pi, 2) * np.power(HBAR_C/ELECTRON_MASS, 3)
-    Energy = ELECTRON_MASS
+    Energy = kT
 
     Erest = D * c2 * FM3_TO_CM3 / MEV_TO_ERG
     C = Volume * Ye * Erest / ATOMIC_MASS_UNIT
 
-    beta = ELECTRON_MASS / kT
+    beta = kT / ELECTRON_MASS
     eta = solve_eta_pairs(beta, C)
 
     nk = "number_density"
@@ -69,7 +69,7 @@ def eos(D, kT, Ye, component):
 
     component : A term or list of terms to be included. May contain:
 
-    ["electrons", "positrons", "photons", "neutrinos"]
+    ["electrons", "positrons", "photons", "cold_electrons"]
 
     D   : density (g/cm^3)
     kT  : temperature (MeV)
@@ -135,7 +135,7 @@ def eos(D, kT, Ye, component):
 
 def convert_beta_to_T(beta):
     """
-    Convenience function, returns the temperature (in MeV) given beta :=
-    mc^2/kT.
+    Convenience function, returns the temperature (in MeV) given beta := kT /
+    mc^2.
     """
-    return ELECTRON_MASS / beta
+    return beta / ELECTRON_MASS

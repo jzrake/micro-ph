@@ -47,7 +47,7 @@ def test_compare_pressure(D=1e13, T0=5.0, T1=80.0, Ye=0.08, terms="all"):
 
         if comp not in terms and terms is not "all": continue
 
-        print "Working out component", comp
+        print "Working out component '%s'" % comp
         p = [physics.eos(D, T, Ye, comp)[1] for T in temp]
         plt.loglog(temp, p, ls, label=tex)
 

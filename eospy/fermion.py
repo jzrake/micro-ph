@@ -14,6 +14,11 @@
  *
  * (+) Sekiguchi (2010)
  *     http://arxiv.org/abs/1009.3320
+ *     NOTE: typo in eqn for pressure, missing 1/3
+ *
+ * (+) Timmes & Arnett (1999)
+ *     http://iopscience.iop.org/0067-0049/125/1/277
+ *     NOTE: typo in eqn (5), missing \beta
  *
  * (+) Beaudet & Tassoul (1971)
  *     http://adsabs.harvard.edu/abs/1971A%26A....13..209B
@@ -31,97 +36,56 @@
  * -----------------------------------------------------------------------------
  """
 
+from scipy.optimize import brentq
 import numpy as np
-from scipy.integrate import quadpack
-from scipy.optimize import newton, brentq
+import timmes.fdfunc
+import fdfunc
 
 # don't worry about overflows in exp
 np.seterr(over='ignore')
 
 __all__ = ["evaluate_term",
-           "solve_eta_pairs",
-           "solve_eta_neutrinos"]
+           "solve_eta_pairs"]
 
-def pdf_fermion(x, sgn, eta, beta):
-    """
-    Returns the integrand for fermion number density.
+FnBackend = "timmes"
 
-    Parameters:
-    --------------------------------------------------------
+def Fn(n, eta, beta):
+    if FnBackend == "timmes":
+        return timmes.fdfunc.dfermi(n, eta, beta)[0]
+    elif FnBackend == "scipy":
+        return fdfunc.dfermi(n, eta, beta)
 
-    x     : pc/mc^2   ... independent variable
-    eta   : mu/kT     ... degeneracy parameter
-    beta  : mc^2/kT   ... unitless inverse temperature
-    
-    Notes:
-    --------------------------------------------------------
+"""
 
-    Volume             ... pi^2 (h/mc)^3
-    Energy             ... m c^2
-    """
-    return x*x / (np.exp(beta*(np.sqrt(1 + x*x) - sgn*1.0) - sgn*eta) + 1.0)
+"""
+def fermion_number_density(eta, beta):
+    return (1./2.) * np.power(2*beta, 1.5) * \
+        (Fn(0.5, eta, beta) + beta*Fn(1.5, eta, beta))
 
-def ferm_number_density (x,s,e,b): return 1.0
-def ferm_pressure       (x,s,e,b): return np.power(x,2) / (3*np.sqrt(1 + x*x))
-def ferm_internal_energy(x,s,e,b): return np.sqrt(1 + x*x) - s*1
+def fermion_pressure(eta, beta):
+    return (1./3.) * np.power(2*beta, 1.5) * \
+        (Fn(1.5, eta, beta) + 0.5*beta*Fn(2.5, eta, beta))
 
+def fermion_internal_energy(eta, beta):
+    return (1./2.) * np.power(2*beta, 1.5) * \
+        (Fn(1.5, eta, beta) + beta*Fn(2.5, eta, beta))
 
 
-def pdf_fermion_massless(x, sgn, eta, beta):
-    """
-    Returns the integrand for fermion number density, in the massless limit.
 
-    Parameters:
-    --------------------------------------------------------
-
-    x     : pc/kT     ... independent variable
-    eta   : mu/kT     ... degeneracy parameter
-    beta  :           ... dummy argument
-
-    Notes:
-    --------------------------------------------------------
-
-    Volume             ... pi^2 (hc/kT)^3
-    Energy             ... kT
-    """
-    return 0.5 * sgn * (x*x) / (1 + np.cosh(x - sgn*eta))
-
-def fmml_number_density (x,s,e,b): return 1.0
-def fmml_pressure       (x,s,e,b): return x / 3.0
-def fmml_internal_energy(x,s,e,b): return x
-
-
-def evaluate_term(key, sgn, eta, beta, massless=False):
+def evaluate_term(key, sgn, eta, beta):
     """
     Evaluates the EOS variable 'key', which is one of 'number_density',
     'pressure', or 'internal energy'.
-
-    Notes:
-    --------------------------------------------------------
-
-    Use sgn = +1/-1 for particles and anti-particles respecticely. Eta is always
-    the 'degeneracy parameter', i.e. the chemical potential over kT. Beta is
-    inverse temperature, where the dimensions depend on whether the particle is
-    massless or not.
     """
-    massive_terms = {
-        "pdf": pdf_fermion,
-        "number_density": ferm_number_density,
-        "pressure": ferm_pressure,
-        "internal_energy": ferm_internal_energy }
+    # For positrons (see TA99 equation 5)
+    if sgn < 0:
+        eta = -eta - 2/beta
 
-    massless_terms = {
-        "pdf": pdf_fermion_massless,
-        "number_density": fmml_number_density,
-        "pressure": fmml_pressure,
-        "internal_energy": fmml_internal_energy }
-
-    terms = massless_terms if massless else massive_terms
-    pdf, val = terms["pdf"], terms[key]
-    f = lambda x: val(x, sgn, eta, beta) * pdf(x, sgn, eta, beta)
-
-    res = quadpack.quad(f, 0.0, quadpack.Inf)
-    return res[0]
+    terms = {
+        "number_density": fermion_number_density,
+        "pressure": fermion_pressure,
+        "internal_energy": fermion_internal_energy }
+    return terms[key](eta, beta)
 
 
 def solve_eta_pairs(beta, C):
@@ -133,7 +97,7 @@ def solve_eta_pairs(beta, C):
     Parameters:
     --------------------------------------------------------
 
-    beta : mc^2 / kT    ... dimensionless inverse temperature
+    beta : kT / mc^2    ... relativity parameter
     C    : n * V0       ... dimensionless number density
     """
     def f(eta):
@@ -146,21 +110,3 @@ def solve_eta_pairs(beta, C):
     while f(bracket) * f(-bracket) > 1.0: bracket *= 2.0
 
     return brentq(f, -bracket, bracket, disp=True)
-
-
-
-def solve_eta_neutrinos(C):
-    """
-    Solves the implicit equation n(e) = C for e := eta, where C the total
-    neutrino number in the characteristic volume V0 := pi^2 (hc/kT)^3.
-
-    Parameters:
-    --------------------------------------------------------
-
-    C    : n * V0       ... dimensionless number density
-    """
-    def f(eta):
-        return evaluate_n(+1, eta, beta) - C
-    return newton(f, 0.0)
-
-
