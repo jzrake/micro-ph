@@ -42,7 +42,7 @@ import timmes.fdfunc
 import fdfunc
 
 # don't worry about overflows in exp
-np.seterr(over='ignore')
+# np.seterr(over='ignore')
 
 __all__ = ["evaluate_term",
            "solve_eta_pairs"]
@@ -107,8 +107,6 @@ def solve_eta_pairs(beta, C):
             evaluate_term("number_density", -1, eta, beta) - C
 
     bracket = 1.0
-    while f(bracket) * f(-bracket) > 0.0:
-        bracket *= 2.0
-
+    while f(bracket) * f(-bracket) > 0.0: bracket *= 2.0
 
     return brentq(f, -bracket, bracket, disp=True)
