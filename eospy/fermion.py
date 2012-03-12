@@ -18,7 +18,7 @@
  *
  * (+) Timmes & Arnett (1999)
  *     http://iopscience.iop.org/0067-0049/125/1/277
- *     NOTE: typo in eqn (5), missing \beta
+ *     NOTE: typo in eqn (5), missing \beta in N_ele
  *
  * (+) Beaudet & Tassoul (1971)
  *     http://adsabs.harvard.edu/abs/1971A%26A....13..209B
@@ -107,6 +107,8 @@ def solve_eta_pairs(beta, C):
             evaluate_term("number_density", -1, eta, beta) - C
 
     bracket = 1.0
-    while f(bracket) * f(-bracket) > 1.0: bracket *= 2.0
+    while f(bracket) * f(-bracket) > 0.0:
+        bracket *= 2.0
+
 
     return brentq(f, -bracket, bracket, disp=True)
