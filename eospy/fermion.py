@@ -12,7 +12,14 @@
  *
  * REFERENCES:
  *
- * (+) Sekiguchi (2010) http://arxiv.org/abs/1009.3320
+ * (+) Sekiguchi (2010)
+ *     http://arxiv.org/abs/1009.3320
+ *
+ * (+) Kothari (1941)
+ *     http://www.jstor.org/stable/97729
+ *
+ * (+) Beaudet & Tassoul (1971)
+ *     http://adsabs.harvard.edu/abs/1971A%26A....13..209B
  *
  *
  * NOTES:
@@ -53,7 +60,7 @@ def pdf_fermion(x, sgn, eta, beta):
     return x*x / (np.exp(beta*(np.sqrt(1 + x*x) - sgn*1.0) - sgn*eta) + 1.0)
 
 def ferm_number_density (x,s,e,b): return 1.0
-def ferm_pressure       (x,s,e,b): return np.power(x,2) / (np.sqrt(1 + x*x))
+def ferm_pressure       (x,s,e,b): return np.power(x,2) / (3*np.sqrt(1 + x*x))
 def ferm_internal_energy(x,s,e,b): return np.sqrt(1 + x*x) - s*1
 
 
@@ -78,7 +85,7 @@ def pdf_fermion_massless(x, sgn, eta, beta):
     return 0.5 * sgn * (x*x) / (1 + np.cosh(x - sgn*eta))
 
 def fmml_number_density (x,s,e,b): return 1.0
-def fmml_pressure       (x,s,e,b): return x
+def fmml_pressure       (x,s,e,b): return x / 3.0
 def fmml_internal_energy(x,s,e,b): return x
 
 

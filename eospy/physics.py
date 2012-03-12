@@ -36,6 +36,7 @@ def eval_pairs(D, kT, Ye, sgn):
     n   : number density (1/fm^3)
     p   : pressure (MeV/fm^3)
     u   : internal energy (MeV/fm^3)
+
     """
     c2 = LIGHT_SPEED*LIGHT_SPEED
     Volume = np.power(np.pi, 2) * np.power(HBAR_C/ELECTRON_MASS, 3)
@@ -73,6 +74,7 @@ def eos(D, kT, Ye, component):
     D   : density (g/cm^3)
     kT  : temperature (MeV)
     Ye  : proton/electron fraction
+
     """
     if type(component) is str: component = [component]
 
@@ -103,11 +105,12 @@ def eos(D, kT, Ye, component):
 
         Erest = D * LIGHT_SPEED*LIGHT_SPEED * FM3_TO_CM3 / MEV_TO_ERG
         ne = Ye * Erest / ATOMIC_MASS_UNIT
+        #rho_e = PROTON_MASS * ne
 
-        # adding the factor 1/8pi below brings cold electrons very close to the
+        # adding the factor 1/24pi below brings cold electrons very close to the
         # limiting case of real electrons
 
-        num = np.power(np.pi, 2) * np.power(HBAR_C, 2) / (8*np.pi)
+        num = np.power(np.pi, 2) * np.power(HBAR_C, 2) / (24*np.pi)
         den = 5.0 * ELECTRON_MASS
         las = np.power(3.0/np.pi, 2./3.) * np.power(ne, 5./3.)
 
