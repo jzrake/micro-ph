@@ -77,7 +77,7 @@ def evaluate_term(key, sgn, eta, beta):
     Evaluates the EOS variable 'key', which is one of 'number_density',
     'pressure', or 'internal energy'.
     """
-    # For positrons (see TA99 equation 5)
+    # For positrons, see TA99 eqn (5)
     if sgn < 0:
         eta = -eta - 2/beta
 
@@ -85,7 +85,14 @@ def evaluate_term(key, sgn, eta, beta):
         "number_density": fermion_number_density,
         "pressure": fermion_pressure,
         "internal_energy": fermion_internal_energy }
-    return terms[key](eta, beta)
+
+    res = terms[key](eta, beta)
+
+    if key == "internal_energy" and sgn < 0:
+        # Correct for the self-energy of positrons, TA99 eqn (9)
+        res += 2 * ELECTRON_MASS * fermion_number_density(eta, beta)
+
+    return res
 
 
 def solve_eta_pairs(beta, C):
