@@ -41,7 +41,7 @@ def eval_pairs(D, kT, Ye, sgn):
     """
     c2 = LIGHT_SPEED*LIGHT_SPEED
     Volume = np.power(np.pi, 2) * np.power(HBAR_C/ELECTRON_MASS, 3)
-    Energy = kT
+    Energy = ELECTRON_MASS
 
     Erest = D * c2 * FM3_TO_CM3 / MEV_TO_ERG
     C = Volume * Ye * Erest / ATOMIC_MASS_UNIT

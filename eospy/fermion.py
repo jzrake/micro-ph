@@ -55,28 +55,44 @@ def Fn(n, eta, beta):
     elif FnBackend == "scipy":
         return fdfunc.dfermi(n, eta, beta)
 
-"""
 
+"""
+These definitions are taken from  Beaudet & Tassoul (1971).
 """
 def fermion_number_density(eta, beta):
-    return (1./2.) * np.power(2*beta, 1.5) * \
-        (Fn(0.5, eta, beta) + beta*Fn(1.5, eta, beta))
+    return (1./2.) * np.power(2, 1.5) * np.power(beta, 1.5) * \
+        (Fn(0.5, eta, beta) + 1.0*beta*Fn(1.5, eta, beta))
 
 def fermion_pressure(eta, beta):
-    return (1./3.) * np.power(2*beta, 1.5) * \
+    return (1./3.) * np.power(2, 1.5) * np.power(beta, 2.5) * \
         (Fn(1.5, eta, beta) + 0.5*beta*Fn(2.5, eta, beta))
 
 def fermion_internal_energy(eta, beta):
-    return (1./2.) * np.power(2*beta, 1.5) * \
-        (Fn(1.5, eta, beta) + beta*Fn(2.5, eta, beta))
+    return (1./2.) * np.power(2, 1.5) * np.power(beta, 2.5) * \
+        (Fn(1.5, eta, beta) + 1.0*beta*Fn(2.5, eta, beta))
 
 
 
 def evaluate_term(key, sgn, eta, beta):
     """
-    Evaluates the EOS variable 'key', which is one of 'number_density',
-    'pressure', or 'internal energy'.
+    Evaluates the dimensionless EOS variable 'key', which is one of
+    'number_density', 'pressure', or 'internal energy'.
+    
+    Parameters:
+    --------------------------------------------------------
+
+    eta  : mu/kT   ... chemical potential (including rest-mass)
+    beta : kT/mc^2 ... relativity parameter
+
+
+    Normalized Units:
+    --------------------------------------------------------
+
+    Volume : mi^2 (h/mc)^3
+    Energy : mc^2
+
     """
+
     # For positrons, see TA99 eqn (5)
     if sgn < 0:
         eta = -eta - 2/beta
