@@ -5,6 +5,7 @@ import numpy as np
 
 import shen
 import physics
+import fermion
 
 
 __all__ = ["test_compare_pressure",
@@ -47,8 +48,7 @@ def test_compare_pressure(D=1e13, T0=5.0, T1=80.0, Ye=0.08, terms="all"):
     for comp, tex, ls in [("nucleons", r"$n$ (shen)", '-'),
                           ("positrons", r"$e_+$", '--'),
                           ("electrons", r"$e_-$", '-.'),
-                          ("photons", r"$\gamma$", '-x'),
-                          ("cold_electrons", r"$e_-$, cold", ':')]:
+                          ("photons", r"$\gamma$", '-x')]:
 
         if comp not in terms and terms is not "all": continue
 
@@ -62,7 +62,21 @@ def test_compare_pressure(D=1e13, T0=5.0, T1=80.0, Ye=0.08, terms="all"):
     plt.show()
 
 
-def test_sample():
-    table = shen.read_hdf5("data/eos3.h5", cols=['log10_rhoB', 'logT', 'p', 'Yp'])
-    print shen.sample(table, 'p', 10**5.1, 0.1, 0.01)
-    print shen.sample(table, 'p', 1e13, 40.0, 0.08)
+
+def test_thermodynamic_consistency():
+
+    eta, beta = 1.0, 1.0
+
+    res = fermion.fermion_everything(+1, eta, beta)
+    n, p, u = res['n'], res['p'], res['u']
+
+    dx = 1e-8
+    res01 = fermion.fermion_everything(+1, eta+dx, beta)
+    res10 = fermion.fermion_everything(+1, eta, beta+dx)
+
+    print res['dndeta' ], (res01['n'] - res['n']) / dx
+    print res['dndbeta'], (res10['n'] - res['n']) / dx
+
+    #dudn = res['dudeta'] / res['dndeta'] + res['dudbeta'] / res['dndbeta']
+    #dpdbeta = res['dpdbeta']
+    #print p, (n*dudn - u) + beta*dpdbeta

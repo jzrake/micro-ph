@@ -124,7 +124,7 @@ def fermion_everything(sgn, eta, beta):
     res['p'] = (1./3.) * t15 * B25 * (G + 0.5*beta*H)
     res['u'] = (1./2.) * t15 * B25 * (G + 1.0*beta*H)
 
-    res['dndeta'] = (1./2.) * t15 * B15 * (Fe + 0.5*beta*Ge)
+    res['dndeta'] = (1./2.) * t15 * B15 * (Fe + 1.0*beta*Ge)
     res['dpdeta'] = (1./3.) * t15 * B25 * (Ge + 0.5*beta*He)
     res['dudeta'] = (1./2.) * t15 * B25 * (Ge + 1.0*beta*He)
 
@@ -146,6 +146,8 @@ def fermion_everything(sgn, eta, beta):
     # Correct for the self-energy of positrons, TA99 eqn (9)
     if sgn < 0:
         res['u'] += 2*res['n']
+        res['dudeta'] += 2*res['dndeta']
+        res['dudbeta'] += 2*res['dndbeta']
 
     return res
 
