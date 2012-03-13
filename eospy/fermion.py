@@ -56,8 +56,27 @@ def Fn(n, eta, beta):
         return fdfunc.dfermi(n, eta, beta)
 
 
+def Fn_all(n, eta, beta):
+    """
+    Generates the Fermi-Dirac integral, as well as its first and second
+    derivatives in eta, beta.
+
+    Returns:
+    --------------------------------------------------------
+
+    f
+    df/d(eta)
+    df/d(beta)
+    d^2(f)/d(eta)^2
+    d^2(f)/d(beta)^2
+    d^2(f)/(d(eta)d(theta))
+
+    """
+    return timmes.fdfunc.dfermi(n, eta, beta)
+
+
 """
-These definitions are taken from  Beaudet & Tassoul (1971).
+These definitions are taken from Beaudet & Tassoul (1971).
 """
 def fermion_number_density(eta, beta):
     return (1./2.) * np.power(2, 1.5) * np.power(beta, 1.5) * \
@@ -70,6 +89,23 @@ def fermion_pressure(eta, beta):
 def fermion_internal_energy(eta, beta):
     return (1./2.) * np.power(2, 1.5) * np.power(beta, 2.5) * \
         (Fn(1.5, eta, beta) + 1.0*beta*Fn(2.5, eta, beta))
+
+
+def dPdeta(eta, beta):
+    F0, Fe, Fb,  = Fn_all(1.5, eta, beta)[:3]
+    G0, Ge, Gb,  = Fn_all(2.5, eta, beta)[:3]
+    return (1./3.) * np.power(2, 1.5) * np.power(beta, 2.5) * (Fe + 0.5*beta*Ge)
+
+
+def dPdbeta(eta, beta):
+    F0, Fe, Fb,  = Fn_all(1.5, eta, beta)[:3]
+    G0, Ge, Gb,  = Fn_all(2.5, eta, beta)[:3]
+
+    K = (1./3.) * np.power(2, 1.5)
+    x = (5./2.) * np.power(beta, 1.5) * (F0 + 0.5*(0 + beta*G0))
+    y = (1./1.) * np.power(beta, 2.5) * (Fb + 0.5*(G + beta*Gb))
+
+    return K*x*y
 
 
 
