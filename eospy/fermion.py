@@ -44,8 +44,8 @@ import fdfunc
 # don't worry about overflows in exp
 # np.seterr(over='ignore')
 
-__all__ = ["evaluate_term",
-           "solve_eta_pairs"]
+__all__ = ["solve_eta_pairs",
+           "fermion_everything"]
 
 FnBackend = "timmes"
 
@@ -75,45 +75,11 @@ def Fn_all(n, eta, beta):
     return timmes.fdfunc.dfermi(n, eta, beta)
 
 
-"""
-These definitions are taken from Beaudet & Tassoul (1971).
-"""
-def fermion_number_density(eta, beta):
-    return (1./2.) * np.power(2, 1.5) * np.power(beta, 1.5) * \
-        (Fn(0.5, eta, beta) + 1.0*beta*Fn(1.5, eta, beta))
-
-def fermion_pressure(eta, beta):
-    return (1./3.) * np.power(2, 1.5) * np.power(beta, 2.5) * \
-        (Fn(1.5, eta, beta) + 0.5*beta*Fn(2.5, eta, beta))
-
-def fermion_internal_energy(eta, beta):
-    return (1./2.) * np.power(2, 1.5) * np.power(beta, 2.5) * \
-        (Fn(1.5, eta, beta) + 1.0*beta*Fn(2.5, eta, beta))
-
-
-def dPdeta(eta, beta):
-    F0, Fe, Fb,  = Fn_all(1.5, eta, beta)[:3]
-    G0, Ge, Gb,  = Fn_all(2.5, eta, beta)[:3]
-    return (1./3.) * np.power(2, 1.5) * np.power(beta, 2.5) * (Fe + 0.5*beta*Ge)
-
-
-def dPdbeta(eta, beta):
-    F0, Fe, Fb,  = Fn_all(1.5, eta, beta)[:3]
-    G0, Ge, Gb,  = Fn_all(2.5, eta, beta)[:3]
-
-    K = (1./3.) * np.power(2, 1.5)
-    x = (5./2.) * np.power(beta, 1.5) * (F0 + 0.5*(0 + beta*G0))
-    y = (1./1.) * np.power(beta, 2.5) * (Fb + 0.5*(G + beta*Gb))
-
-    return K*x*y
-
-
-
-def evaluate_term(key, sgn, eta, beta):
+def fermion_everything(sgn, eta, beta):
     """
-    Evaluates the dimensionless EOS variable 'key', which is one of
-    'number_density', 'pressure', or 'internal energy'.
-    
+    Evaluates the dimensionless number density, pressure, and internal energy,
+    as well as their derivatives in terms of eta and beta.
+
     Parameters:
     --------------------------------------------------------
 
@@ -121,28 +87,65 @@ def evaluate_term(key, sgn, eta, beta):
     beta : kT/mc^2 ... relativity parameter
 
 
-    Normalized Units:
+    Returns:
     --------------------------------------------------------
 
-    Volume : mi^2 (h/mc)^3
+    A dictionary whose keys are self-explanatory.
+
+
+    Notes:
+    --------------------------------------------------------
+
+    Return values are normalized with the following units:
+
+    Volume : mc^2 (h/mc)^3
     Energy : mc^2
 
-    """
+    The formulae below are taken from Beaudet & Tassoul (1971). The idea of
+    including the rest-mass in the chemical potential is inspired by TA99.
 
+    """
     # For positrons, see TA99 eqn (5)
     if sgn < 0:
         eta = -eta - 2/beta
 
-    terms = {
-        "number_density": fermion_number_density,
-        "pressure": fermion_pressure,
-        "internal_energy": fermion_internal_energy }
+    F, Fe, Fb = Fn_all(0.5, eta, beta)[:3]
+    G, Ge, Gb = Fn_all(1.5, eta, beta)[:3]
+    H, He, Hb = Fn_all(2.5, eta, beta)[:3]
 
-    res = terms[key](eta, beta)
+    t15 = np.power(2, 1.5)
+    B05 = np.power(beta, 0.5)
+    B15 = np.power(beta, 1.5)
+    B25 = np.power(beta, 2.5)
 
-    if key == "internal_energy" and sgn < 0:
-        # Correct for the self-energy of positrons, TA99 eqn (9)
-        res += 2 * ELECTRON_MASS * fermion_number_density(eta, beta)
+    res = { }
+
+    res['n'] = (1./2.) * t15 * B15 * (F + 1.0*beta*G)
+    res['p'] = (1./3.) * t15 * B25 * (G + 0.5*beta*H)
+    res['u'] = (1./2.) * t15 * B25 * (G + 1.0*beta*H)
+
+    res['dndeta'] = (1./2.) * t15 * B15 * (Fe + 0.5*beta*Ge)
+    res['dpdeta'] = (1./3.) * t15 * B25 * (Ge + 0.5*beta*He)
+    res['dudeta'] = (1./2.) * t15 * B25 * (Ge + 1.0*beta*He)
+
+    # number density
+    x = (3./2.) * B05 * (F  + (0 + beta*G ))
+    y = (1./1.) * B15 * (Fb + (G + beta*Gb))
+    res['dndbeta'] = (1./2.) * t15 * (x + y)
+
+    # pressure
+    x = (5./2.) * B15 * (G  + 0.5*(0 + beta*H ))
+    y = (1./1.) * B25 * (Gb + 0.5*(H + beta*Hb))
+    res['dpdbeta'] = (1./3.) * t15 * (x + y)
+
+    # inernal energy
+    x = (5./2.) * B15 * (G  + (0 + beta*H ))
+    y = (1./1.) * B25 * (Gb + (H + beta*Hb))
+    res['dudbeta'] = (1./2.) * t15 * (x + y)
+
+    # Correct for the self-energy of positrons, TA99 eqn (9)
+    if sgn < 0:
+        res['u'] += 2*res['n']
 
     return res
 
@@ -160,6 +163,12 @@ def solve_eta_pairs(beta, C):
     C    : n * V0       ... dimensionless number density
     """
     def f(eta):
+        """ ne(e,b) - np(e,b) = C """
+        return \
+            fermion_everything(+1, eta, beta)['n'] - \
+            fermion_everything(-1, eta, beta)['n'] - C
+
+    def g(eta):
         """ ne(e,b) - np(e,b) = C """
         return \
             evaluate_term("number_density", +1, eta, beta) - \

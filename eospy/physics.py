@@ -53,9 +53,10 @@ def eval_pairs(D, kT, Ye, sgn):
     pk = "pressure"
     uk = "internal_energy"
 
-    n = (1.0    / Volume) * evaluate_term(nk, sgn, eta, beta)
-    p = (Energy / Volume) * evaluate_term(pk, sgn, eta, beta)
-    u = (Energy / Volume) * evaluate_term(uk, sgn, eta, beta)
+    terms = fermion_everything(sgn, eta, beta)
+    n = (1.0    / Volume) * terms['n']
+    p = (Energy / Volume) * terms['p']
+    u = (Energy / Volume) * terms['u']
 
     return n,p,u,eta
 
