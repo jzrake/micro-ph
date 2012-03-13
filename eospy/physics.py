@@ -62,15 +62,15 @@ def eval_pairs(D, kT, Ye, sgn):
 
 def eos(D, kT, Ye, component):
     """
-    Returns the number density, pressure, and internal energy given the density,
-    temperature, and internal energy.
+    Returns the number density, pressure, and internal energy density given the
+    density, temperature, and internal energy.
 
     Parameters:
     --------------------------------------------------------
 
     component : A term or list of terms to be included. May contain:
 
-    ["electrons", "positrons", "photons", "cold_electrons"]
+    ["electrons", "positrons", "photons", "cold_electrons", "dense_electrons"]
 
     D   : density (g/cm^3)
     kT  : temperature (MeV)
@@ -152,6 +152,7 @@ def convert_beta_to_kT(beta):
     mc^2.
     """
     return beta / ELECTRON_MASS
+
 
 def convert_kT_to_Kelvin(kT):
     return kT / BOLTZMANN_CONSTANT
