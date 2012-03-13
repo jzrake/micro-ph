@@ -49,10 +49,6 @@ def eval_pairs(D, kT, Ye, sgn):
     beta = kT / ELECTRON_MASS
     eta = solve_eta_pairs(beta, C)
 
-    nk = "number_density"
-    pk = "pressure"
-    uk = "internal_energy"
-
     terms = fermion_everything(sgn, eta, beta)
     n = (1.0    / Volume) * terms['n']
     p = (Energy / Volume) * terms['p']

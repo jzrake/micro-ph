@@ -168,12 +168,6 @@ def solve_eta_pairs(beta, C):
             fermion_everything(+1, eta, beta)['n'] - \
             fermion_everything(-1, eta, beta)['n'] - C
 
-    def g(eta):
-        """ ne(e,b) - np(e,b) = C """
-        return \
-            evaluate_term("number_density", +1, eta, beta) - \
-            evaluate_term("number_density", -1, eta, beta) - C
-
     bracket = 1.0
     while f(bracket) * f(-bracket) > 0.0: bracket *= 2.0
 
