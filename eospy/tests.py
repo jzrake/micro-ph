@@ -63,7 +63,23 @@ def test_compare_pressure(D=1e13, T0=5.0, T1=80.0, Ye=0.08, terms="all"):
 
 
 
-def test_thermodynamic_consistency():
+def test_thermodynamic_consistency(D, T, Y):
+    D0 = D
+    T0 = T
+
+    D1 = (1+1e-10)*D0
+    T1 = (1+1e-10)*T0
+
+    n0, p0, u0, eta0 = physics.eos(D0, T0, Y, component=["electrons", "positrons"])
+    nD, pD, uD, etaD = physics.eos(D1, T0, Y, component=["electrons", "positrons"])
+    nT, pT, uT, etaT = physics.eos(D0, T1, Y, component=["electrons", "positrons"])
+
+    p_rhs = D0**2 * (uD/D1-u0/D0)/(D1-D0) + T0 * (pT-p0) / (T1-T0)
+
+    print "relative error in consistency:", (p0 - p_rhs) / p0
+
+
+def test_derivatives():
 
     eta, beta = 1.0, 1.0
 
@@ -77,6 +93,14 @@ def test_thermodynamic_consistency():
     print res['dndeta' ], (res01['n'] - res['n']) / dx
     print res['dndbeta'], (res10['n'] - res['n']) / dx
 
-    #dudn = res['dudeta'] / res['dndeta'] + res['dudbeta'] / res['dndbeta']
-    #dpdbeta = res['dpdbeta']
-    #print p, (n*dudn - u) + beta*dpdbeta
+    print res['dudeta' ], (res01['u'] - res['u']) / dx
+    print res['dudbeta'], (res10['u'] - res['u']) / dx
+
+    print res['dpdeta' ], (res01['p'] - res['p']) / dx
+    print res['dpdbeta'], (res10['p'] - res['p']) / dx
+
+    # these derivatives hold mu constant
+    du = eta*res['dudeta'] - beta*res['dudbeta']
+    dn = eta*res['dndeta'] - beta*res['dndbeta']
+
+    print du/dn, eta

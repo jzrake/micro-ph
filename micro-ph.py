@@ -8,4 +8,5 @@ if __name__ == "__main__":
     #fdfunc.test_fdintegrand(use_timmes=True)
     #fdfunc.test_fdintegral(use_timmes=False)
     #tests.test_pressure_vs_density()
-    tests.test_thermodynamic_consistency()
+    tests.test_thermodynamic_consistency(1e13, 40.0, 0.08)
+    #tests.test_derivatives()
