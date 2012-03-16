@@ -75,6 +75,7 @@ def Fn_all(n, eta, beta):
     return timmes.fdfunc.dfermi(n, eta, beta)
 
 
+
 def fermion_everything(sgn, eta, beta):
     """
     Evaluates the dimensionless number density, pressure, and internal energy,
@@ -119,6 +120,9 @@ def fermion_everything(sgn, eta, beta):
     B25 = np.power(beta, 2.5)
 
     res = { }
+
+    res['beta'] = beta
+    res['eta'] = eta
 
     res['n'] = (1./2.) * t15 * B15 * (F + 1.0*beta*G)
     res['p'] = (1./3.) * t15 * B25 * (G + 0.5*beta*H)

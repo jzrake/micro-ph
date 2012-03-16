@@ -18,43 +18,96 @@ BOLTZMANN_CONSTANT = 8.617332400e-11 # MeV/K
 
 ShenNucleonTable = { "table": None }
 
-def eval_pairs(D, kT, Ye, sgn):
+
+class EquationOfStateTerms(object):
     """
-    Returns the number density, pressure, and internal (n,p,u) energy for
-    either electrons or positrons depending on sgn (+/-).
-
-    Parameters:
-    --------------------------------------------------------
-
-    D   : density (g/cm^3)
-    kT  : temperature (MeV)
-    Ye  : proton/electron fraction
-    sgn : (+) for electrons, (-) for positrons
-
-    Returns:
-    --------------------------------------------------------
-
-    n   : number density (1/fm^3)
-    p   : pressure (MeV/fm^3)
-    u   : internal energy (MeV/fm^3)
-
+    Describes an EOS term.
     """
-    c2 = LIGHT_SPEED*LIGHT_SPEED
-    Volume = np.power(np.pi, 2) * np.power(HBAR_C/ELECTRON_MASS, 3)
-    Energy = ELECTRON_MASS
+    def __init__(self, D, T, Y):
+        self.D = D
+        self.T = T
+        self.Y = Y
+        self._terms = { }
 
-    Erest = D * c2 * FM3_TO_CM3 / MEV_TO_ERG
-    C = Volume * Ye * Erest / ATOMIC_MASS_UNIT
+    def density(self):
+        return self._terms['rho']
 
-    beta = kT / ELECTRON_MASS
-    eta = solve_eta_pairs(beta, C)
+    def number_density(self):
+        return self._terms['n']
 
-    terms = fermion_everything(sgn, eta, beta)
-    n = (1.0    / Volume) * terms['n']
-    p = (Energy / Volume) * terms['p']
-    u = (Energy / Volume) * terms['u']
+    def pressure(self):
+        return self._terms['p']
 
-    return n,p,u,eta
+    def internal_energy(self):
+        return 0.0
+
+    def entropy(self):
+        return self._terms['s']
+
+    def chemical_potential(self):
+        return self._terms['eta'] * self.T
+
+    def consistency(self):
+        pass
+
+
+class BlackbodyPhotons(EquationOfStateTerms):
+    """
+    http://en.wikipedia.org/wiki/Photon_gas
+    """
+    def _set_terms(self):
+        z3 = 1.202056903159594285 # RiemannZeta(3), Mathematica
+        T3 = np.power(self.T, 3)
+        T4 = np.power(self.T, 4)
+
+        self.terms = { }
+
+        self.terms['n'] = T3 * 2 * z3 / (np.power(np.pi, 2.0) * np.power(HBAR_C, 3.0))
+        self.terms['p'] = T4 * a / 3.0
+        self.terms['u'] = T4 * a
+        self.terms['s'] = (4./3.) * self.terms['u'] / self.T # entropy has no units here
+
+
+
+class ElectronPositronPairs(EquationOfStateTerms):
+    """
+    
+    """
+    def _set_terms(self):
+        fermion.solve_eta_pairs()
+
+
+    def eval_pairs(self):
+        """
+        Sets the number density, pressure, and internal (n,p,u) energy for both
+        electrons and positrons.
+        
+        Parameters:
+        --------------------------------------------------------
+        
+        D   : density (g/cm^3)
+        kT  : temperature (MeV)
+        Ye  : proton/electron fraction
+
+        """
+
+        D, kT, Ye = self.D, self.T, self.Y
+
+        c2 = LIGHT_SPEED*LIGHT_SPEED
+        Volume = np.power(np.pi, 2) * np.power(HBAR_C/ELECTRON_MASS, 3)
+        Energy = ELECTRON_MASS
+
+        Erest = D * c2 * FM3_TO_CM3 / MEV_TO_ERG
+        C = Volume * Ye * Erest / ATOMIC_MASS_UNIT
+
+        beta = kT / ELECTRON_MASS
+        eta = solve_eta_pairs(beta, C)
+
+        self.electrons = fermion_everything(+1, eta, beta)
+        self.positions = fermion_everything(-1, eta, beta)
+
+        return self.electrons, self.positrons
+
 
 
 def eos(D, kT, Ye, component):
