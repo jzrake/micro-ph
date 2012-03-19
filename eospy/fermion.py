@@ -75,11 +75,10 @@ def Fn_all(n, eta, beta):
     return timmes.fdfunc.dfermi(n, eta, beta)
 
 
-
 def fermion_everything(sgn, eta, beta):
     """
     Evaluates the dimensionless number density, pressure, and internal energy,
-    as well as their derivatives in terms of eta and beta.
+    and entropy.
 
     Parameters:
     --------------------------------------------------------
@@ -121,8 +120,35 @@ def fermion_everything(sgn, eta, beta):
 
     res = { }
 
-    res['beta'] = beta
-    res['eta'] = eta
+    res['n'] = (1./2.) * t15 * B15 * (F + 1.0*beta*G)
+    res['p'] = (1./3.) * t15 * B25 * (G + 0.5*beta*H)
+    res['u'] = (1./2.) * t15 * B25 * (G + 1.0*beta*H)
+    res['s'] = (res['u'] + res['p'])/beta - res['n'] * eta
+
+    # Correct for the self-energy of positrons, TA99 eqn (9)
+    if sgn < 0:
+        res['u'] += 2*res['n']
+
+    return res
+
+
+def electron_everything(sgn, eta, beta):
+    """
+    Like fermion_everything, but also generates derivatives of n, p, and u. Only
+    works for electrons right now.
+    """
+    assert(sgn > 0)
+
+    F, Fe, Fb = Fn_all(0.5, eta, beta)[:3]
+    G, Ge, Gb = Fn_all(1.5, eta, beta)[:3]
+    H, He, Hb = Fn_all(2.5, eta, beta)[:3]
+
+    t15 = np.power(2, 1.5)
+    B05 = np.power(beta, 0.5)
+    B15 = np.power(beta, 1.5)
+    B25 = np.power(beta, 2.5)
+
+    res = { }
 
     res['n'] = (1./2.) * t15 * B15 * (F + 1.0*beta*G)
     res['p'] = (1./3.) * t15 * B25 * (G + 0.5*beta*H)
@@ -146,12 +172,6 @@ def fermion_everything(sgn, eta, beta):
     x = (5./2.) * B15 * (G  + (0 + beta*H ))
     y = (1./1.) * B25 * (Gb + (H + beta*Hb))
     res['dudbeta'] = (1./2.) * t15 * (x + y)
-
-    # Correct for the self-energy of positrons, TA99 eqn (9)
-    if sgn < 0:
-        res['u'] += 2*res['n']
-        res['dudeta'] += 2*res['dndeta']
-        res['dudbeta'] += 2*res['dndbeta']
 
     return res
 
