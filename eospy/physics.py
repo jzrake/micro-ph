@@ -193,23 +193,28 @@ class NucleonsShenEos3(EquationOfStateTerms):
     full table: http://user.numazu-ct.ac.jp/~sumi/eos/table2/eos3.tab.gz
     """
 
-    _table = None
+    _table = None # caches the hdf5 table once it is loaded
 
     def _set_terms(self):
-        if self._table is None:
+        if type(self)._table is None:
             cols = ['log10_rhoB', 'logT', 'Yp', 'p', 'nB', 'Eint', 'S']
-            self._table = shen.read_hdf5("data/eos3.h5", cols=cols)
+            type(self)._table = shen.read_hdf5("data/eos3.h5", cols=cols)
 
         D, kT, Ye = self.D, self.T, self.Y
         t = self._terms
+        e = type(self)._table
+ 
+        t['n'] = shen.sample(e, 'nB'  , D, kT, Ye)
+        t['p'] = shen.sample(e, 'p'   , D, kT, Ye)
+        t['u'] = shen.sample(e, 'Eint', D, kT, Ye)
+        t['s'] = shen.sample(e, 'S'   , D, kT, Ye) * t['n']
 
-        t['n'] = shen.sample(self._table, 'nB'  , D, kT, Ye)
-        t['p'] = shen.sample(self._table, 'p'   , D, kT, Ye)
-        t['u'] = shen.sample(self._table, 'Eint', D, kT, Ye)
-        t['s'] = shen.sample(self._table, 'S', D, kT, Ye) * t['n']
 
 
 if __name__ == "__main__":
+    """
+    Runs some tests.
+    """
     import unittest
     print "testing", __file__
 
@@ -243,6 +248,18 @@ if __name__ == "__main__":
 
             with self.assertRaises(KeyError):
                 s = eos.entropy_density()
+
+
+    class TestNucleonsShenEos3(unittest.TestCase):
+
+        def test_instantiate(self):
+            eos = NucleonsShenEos3(1e13, 40.0, 0.08)
+            self.assertIsNotNone(NucleonsShenEos3._table)
+
+        def test_eos(self):
+            eos = NucleonsShenEos3(1e13, 40.0, 0.08)
+            self.assertIsInstance(eos.pressure(), float)
+
 
     unittest.main()
 
