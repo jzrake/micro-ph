@@ -14,7 +14,6 @@ MEV_TO_ERG         = 1.602176487e-06
 FM3_TO_CM3         = 1.000000000e-39
 BOLTZMANN_CONSTANT = 8.617332400e-11 # MeV/K
 
-ShenNucleonTable = { "table": None }
 
 
 class EquationOfStateTerms(object):
@@ -68,6 +67,7 @@ class BlackbodyPhotons(EquationOfStateTerms):
         z3 = 1.202056903159594285 # RiemannZeta(3), Mathematica
         T3 = np.power(self.T, 3)
         T4 = np.power(self.T, 4)
+        a = pow(np.pi, 2) / (15*np.power(HBAR_C, 3))
 
         t = self._terms
 
@@ -77,9 +77,25 @@ class BlackbodyPhotons(EquationOfStateTerms):
         t['s'] = (4./3.) * (T4 * a) / (self.T / BOLTZMANN_CONSTANT)
 
 
+class FermionComponent(EquationOfStateTerms):
+    """
+    Represents an EOS component of electrons and/or positrons.
+
+    Notes:
+    ----------------------------------------------------------------------------
+
+    Objects inheriting from this class are instantiated with the baryon mass
+    density and proton fraction as 'D'. However, the mass_density method returns
+    the mass density of fermions.
+    """
+    def mass_density(self):
+        """
+        Returns the mass density of electrons in g/cm^3.
+        """
+        return self._terms['n'] * (ELECTRON_MASS/(LIGHT_SPEED*LIGHT_SPEED))
 
 
-class ElectronPositronPairs(EquationOfStateTerms):
+class ElectronPositronPairs(FermionComponent):
     """
     Evaluates the electron and positron pressure using exact Fermi-Dirac
     integrals.
@@ -126,7 +142,7 @@ class ElectronPositronPairs(EquationOfStateTerms):
 
 
 
-class ColdElectrons(EquationOfStateTerms):
+class ColdElectrons(FermionComponent):
     """
     Evaluates the thermodynamic variables for a cold (fully degenerate) electron
     gas. Accurate as long as the Fermi momentum is not relativistic.
@@ -149,7 +165,7 @@ class ColdElectrons(EquationOfStateTerms):
 
 
 
-class DenseElectrons(EquationOfStateTerms):
+class DenseElectrons(FermionComponent):
     """
     Evaluates the thermodynamic variables for a dense and fully degenerate
     electron gas, where the Fermi momentum is ultra-relativistic.
@@ -165,3 +181,70 @@ class DenseElectrons(EquationOfStateTerms):
         self._terms['p'] = 0.123 * 2*np.pi * HBAR_C * np.power(ne, 4./3.)
         # 'u' not implemented yet
         # 's' not implemented yet
+
+
+
+class NucleonsShenEos3(EquationOfStateTerms):
+    """
+    Evaluates the thermodynamic variables for dense baryons using the (updated)
+    lookup table 'eos3' of Shen et. al. (1998).
+
+    user guide: http://user.numazu-ct.ac.jp/~sumi/eos/table2/guide_EOS3.pdf
+    full table: http://user.numazu-ct.ac.jp/~sumi/eos/table2/eos3.tab.gz
+    """
+
+    _table = None
+
+    def _set_terms(self):
+        if self._table is None:
+            cols = ['log10_rhoB', 'logT', 'Yp', 'p', 'nB', 'Eint', 'S']
+            self._table = shen.read_hdf5("data/eos3.h5", cols=cols)
+
+        D, kT, Ye = self.D, self.T, self.Y
+        t = self._terms
+
+        t['n'] = shen.sample(self._table, 'nB'  , D, kT, Ye)
+        t['p'] = shen.sample(self._table, 'p'   , D, kT, Ye)
+        t['u'] = shen.sample(self._table, 'Eint', D, kT, Ye)
+        t['s'] = shen.sample(self._table, 'S', D, kT, Ye) * t['n']
+
+
+if __name__ == "__main__":
+    import unittest
+    print "testing", __file__
+
+    class TestEquationOfStateTerms(unittest.TestCase):
+
+        def test_instantiate(self):
+            with self.assertRaises(AttributeError):
+                eos = EquationOfStateTerms(1.0, 1.0, 1.0)
+
+
+    class TestBlackbodyPhotons(unittest.TestCase):
+
+        def test_instantiate(self):
+            with self.assertRaises(TypeError):
+                eos = BlackbodyPhotons(1.0, 1.0, 1.0)
+
+        def test_eos(self):
+            eos = BlackbodyPhotons(40.0)
+            self.assertIsInstance(eos.pressure(), float)
+            self.assertIsInstance(eos.entropy_density(), float)
+            self.assertEqual(eos.mass_density(), 0.0)
+
+
+    class TestColdElectrons(unittest.TestCase):
+
+        def test_eos(self):
+            eos = ColdElectrons(1e13, 40.0, 0.08)
+
+            self.assertIsInstance(eos.pressure(), float)
+            self.assertIsInstance(eos.mass_density(), float)
+
+            with self.assertRaises(KeyError):
+                s = eos.entropy_density()
+
+    unittest.main()
+
+
+
