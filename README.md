@@ -23,7 +23,7 @@ available very soon.
 * Relativistic and degenerate electron/positron pairs
 
     * Fermi-Dirac integrals evaluated either with Scipy integration, or through
-      a [http://cococubed.asu.edu/code_pages/fermi_dirac.shtml](Fortran module)
+      a [Fortran module](http://cococubed.asu.edu/code_pages/fermi_dirac.shtml)
       due to Frank Timmes.
 
     * Asymptotic forms for cold electrons in the 5/3 and 4/3 (high density)
@@ -46,6 +46,6 @@ available very soon.
 
 * Neutrinos in beta-equilibrium with pair plasma
 * Photo-ionization
-* Full EOS of [http://cococubed.asu.edu/code_pages/eos.shtml](Timmes)
-* Full EOS of [http://www.astro.sunysb.edu/dswesty/lseos.html](Lattimer & Swesty)
+* Full EOS of [Timmes](http://cococubed.asu.edu/code_pages/eos.shtml)
+* Full EOS of [Lattimer & Swesty](http://www.astro.sunysb.edu/dswesty/lseos.html)
 
