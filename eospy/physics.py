@@ -54,11 +54,8 @@ class BlackbodyPhotons(EquationOfStateTerms):
     Evaluates all terms for a photon gas. Only needs the temperature as a
     parameter.
     """
-    def __init__(self, T):
-        self.D = 0.0
-        self.T = T
-        self._terms = { }
-        self._set_terms()
+    def mass_density(self):
+        return 0.0
 
     def _set_terms(self):
         """
@@ -75,6 +72,7 @@ class BlackbodyPhotons(EquationOfStateTerms):
         t['p'] = T4 * a / 3.0
         t['u'] = T4 * a
         t['s'] = (4./3.) * (T4 * a) / (self.T / BOLTZMANN_CONSTANT)
+
 
 
 class FermionComponent(EquationOfStateTerms):
@@ -122,10 +120,10 @@ class ElectronPositronPairs(FermionComponent):
         C = Volume * self.Y * Erest / ATOMIC_MASS_UNIT
 
         beta = self.T / ELECTRON_MASS
-        eta = solve_eta_pairs(beta, C)
+        eta = fermion.solve_eta_pairs(beta, C)
 
-        ele = fermion_everything(+1, eta, beta)
-        pos = fermion_everything(-1, eta, beta)
+        ele = fermion.fermion_everything(+1, eta, beta)
+        pos = fermion.fermion_everything(-1, eta, beta)
     
         for f in [ele, pos]:
             f['n'] *= (1.0 / Volume)
@@ -210,6 +208,12 @@ class NucleonsShenEos3(EquationOfStateTerms):
         t['s'] = shen.sample(e, 'S'   , D, kT, Ye) * t['n']
 
 
+def eos(D, T, Y, terms):
+
+    for TermClass in terms:
+        eos = TermClass(D, T, Y)
+        print eos
+
 
 if __name__ == "__main__":
     """
@@ -229,10 +233,10 @@ if __name__ == "__main__":
 
         def test_instantiate(self):
             with self.assertRaises(TypeError):
-                eos = BlackbodyPhotons(1.0, 1.0, 1.0)
+                eos = BlackbodyPhotons(1.0)
 
         def test_eos(self):
-            eos = BlackbodyPhotons(40.0)
+            eos = BlackbodyPhotons(1e13, 40.0, 0.08)
             self.assertIsInstance(eos.pressure(), float)
             self.assertIsInstance(eos.entropy_density(), float)
             self.assertEqual(eos.mass_density(), 0.0)
@@ -259,6 +263,7 @@ if __name__ == "__main__":
         def test_eos(self):
             eos = NucleonsShenEos3(1e13, 40.0, 0.08)
             self.assertIsInstance(eos.pressure(), float)
+            self.assertIsInstance(eos.entropy_density(), float)
 
 
     unittest.main()

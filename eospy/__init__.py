@@ -23,3 +23,5 @@
  """
 
 __all__ = ["tests", "physics", "fermion", "fdfunc", "shen"]
+
+import physics
