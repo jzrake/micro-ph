@@ -205,20 +205,28 @@ class NucleonsShenEos3(EquationOfStateTerms):
 
     _table = None # caches the hdf5 table once it is loaded
 
+    def chemical_potential(self, type):
+        if type == 'neutrons': return self._terms['mu_n']
+        if type == 'protons' : return self._terms['mu_p']
+        raise ValueError("'type' must be either 'neutrons' or 'protons'")
+
+
     def _set_terms(self):
         if type(self)._table is None:
-            cols = ['log10_rhoB', 'logT', 'Yp', 'p', 'nB', 'Eint', 'S']
+            cols = ['log10_rhoB', 'logT', 'Yp', 'p', 'nB', 'Eint',
+                    'S', 'un', 'up']
             type(self)._table = shen.read_hdf5("data/eos3.h5", cols=cols)
 
         D, kT, Ye = self.D, self.T, self.Y
         t = self._terms
         e = type(self)._table
  
-        t['n'] = shen.sample(e, 'nB'  , D, kT, Ye)
-        t['p'] = shen.sample(e, 'p'   , D, kT, Ye)
-        t['u'] = shen.sample(e, 'Eint', D, kT, Ye)
-        t['s'] = shen.sample(e, 'S'   , D, kT, Ye) * t['n']
-
+        t['n'] = shen.sample(e, 'nB'   , D, kT, Ye)
+        t['p'] = shen.sample(e, 'p'    , D, kT, Ye)
+        t['u'] = shen.sample(e, 'Eint' , D, kT, Ye) * t['n']
+        t['s'] = shen.sample(e, 'S'    , D, kT, Ye) * t['n']
+        t['mu_n'] = shen.sample(e, 'un', D, kT, Ye)
+        t['mu_p'] = shen.sample(e, 'up', D, kT, Ye)
 
 
 
@@ -272,6 +280,11 @@ if __name__ == "__main__":
             self.assertIsInstance(eos.pressure(), float)
             self.assertIsInstance(eos.entropy_density(), float)
 
+        def test_chemical_potential(self):
+            eos = NucleonsShenEos3(1e13, 40.0, 0.08)
+            with self.assertRaises(ValueError):
+                eos.chemical_potential('dr. seuss')
+            self.assertIsInstance(eos.chemical_potential('protons'), float)
 
     unittest.main()
 
