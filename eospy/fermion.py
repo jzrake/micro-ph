@@ -124,6 +124,7 @@ def fermion_everything(sgn, eta, beta):
     res['p'] = (1./3.) * t15 * B25 * (G + 0.5*beta*H)
     res['u'] = (1./2.) * t15 * B25 * (G + 1.0*beta*H)
     res['s'] = (res['u'] + res['p'])/beta - res['n'] * eta
+    res['eta'] = eta
 
     # Correct for the self-energy of positrons, TA99 eqn (9)
     if sgn < 0:

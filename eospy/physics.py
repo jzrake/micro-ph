@@ -49,6 +49,7 @@ class EquationOfStateTerms(object):
         pass
 
 
+
 class BlackbodyPhotons(EquationOfStateTerms):
     """
     Evaluates all terms for a photon gas. Only needs the temperature as a
@@ -93,12 +94,7 @@ class FermionComponent(EquationOfStateTerms):
         return self._terms['n'] * (ELECTRON_MASS/(LIGHT_SPEED*LIGHT_SPEED))
 
 
-class ElectronPositronPairs(FermionComponent):
-    """
-    Evaluates the electron and positron pressure using exact Fermi-Dirac
-    integrals.
-    """
-    def _set_terms(self):
+    def _eval_pairs(self):
         """
         Sets the number density, pressure, and internal (n,p,u) energy for both
         electrons and positrons.
@@ -106,9 +102,10 @@ class ElectronPositronPairs(FermionComponent):
         Parameters (taken from self):
         --------------------------------------------------------
         
-        D  : density (g/cm^3)
-        T  : temperature (MeV)
-        Y  : proton/electron fraction
+        D    : density (g/cm^3)
+        T    : temperature (MeV)
+        Y    : proton/electron fraction
+        _sgn : +/- for electrons / positrons
 
         """
 
@@ -122,22 +119,37 @@ class ElectronPositronPairs(FermionComponent):
         beta = self.T / ELECTRON_MASS
         eta = fermion.solve_eta_pairs(beta, C)
 
-        ele = fermion.fermion_everything(+1, eta, beta)
-        pos = fermion.fermion_everything(-1, eta, beta)
-    
-        for f in [ele, pos]:
-            f['n'] *= (1.0 / Volume)
-            f['p'] *= (Energy / Volume)
-            f['u'] *= (Energy / Volume)
-            f['s'] *= (BOLTZMANN_CONSTANT / Volume)
+        f = fermion.fermion_everything(self._sgn, eta, beta)
+
+        f['n'] *= (1.0 / Volume)
+        f['p'] *= (Energy / Volume)
+        f['u'] *= (Energy / Volume)
+        f['s'] *= (BOLTZMANN_CONSTANT / Volume)
 
         for k in "npus":
-            self._terms[k] = ele[k] + pos[k]
+            self._terms[k] = f[k]
 
-        self._terms['eta'] = eta
-        self.electrons = ele
-        self.positrons = pos
+        self._terms['eta'] = f['eta']
 
+
+
+class FermiDiracElectrons(FermionComponent):
+    """
+    Evaluates the electron thermodynamics using exact Fermi-Dirac integrals.
+    """
+    def _set_terms(self):
+        self._sgn = +1.0
+        self._eval_pairs()
+
+
+
+class FermiDiracPositrons(FermionComponent):
+    """
+    Evaluates the positron thermodynamics using exact Fermi-Dirac integrals.
+    """
+    def _set_terms(self):
+        self._sgn = -1.0
+        self._eval_pairs()
 
 
 class ColdElectrons(FermionComponent):
@@ -208,11 +220,6 @@ class NucleonsShenEos3(EquationOfStateTerms):
         t['s'] = shen.sample(e, 'S'   , D, kT, Ye) * t['n']
 
 
-def eos(D, T, Y, terms):
-
-    for TermClass in terms:
-        eos = TermClass(D, T, Y)
-        print eos
 
 
 if __name__ == "__main__":
