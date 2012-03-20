@@ -53,6 +53,37 @@ class EquationOfStateTerms(object):
 
 
 
+class EquationOfStateEvaluator(object):
+    """
+    Instances of this class are composite equations of state, consisting of
+    several different terms, or components. Each term is a class inheriting from
+    EquationOfStateTerms, not an instance of a class. It knows how to create
+    instances when it needs and query them for values or create derivatives.
+    """
+    def __init__(self, Terms=[]):
+        self._Terms = [ ]
+        for t in Terms: self.add_term(t)
+
+    def add_term(self, term):
+        """
+        Add a term to the composite EOS.
+        """
+        self._Terms.append(term)
+
+    def number_density(self, D, T, Y):
+        return sum([t(D, T, Y).number_density() for t in self._Terms])
+
+    def pressure(self, D, T, Y):
+        return sum([t(D, T, Y).pressure() for t in self._Terms])
+
+    def internal_energy(self, D, T, Y):
+        return sum([t(D, T, Y).internal_energy() for t in self._Terms])
+
+    def entropy_density(self, D, T, Y):
+        return sum([t(D, T, Y).entropy_density() for t in self._Terms])
+
+
+
 class BlackbodyPhotons(EquationOfStateTerms):
     """
     Evaluates all terms for a photon gas. Only needs the temperature as a
@@ -199,8 +230,11 @@ class DenseElectrons(FermionComponent):
 
 class NucleonsShenEos3(EquationOfStateTerms):
     """
-    Evaluates the thermodynamic variables for dense baryons using the (updated)
-    lookup table 'eos3' of Shen et. al. (1998).
+    Evaluates the thermodynamic variables for dense baryons using the (updated
+    2011) lookup table 'eos3' of Shen et. al. (1998).
+
+    Notes:
+    ----------------------------------------------------------------------------
 
     user guide: http://user.numazu-ct.ac.jp/~sumi/eos/table2/guide_EOS3.pdf
     full table: http://user.numazu-ct.ac.jp/~sumi/eos/table2/eos3.tab.gz
@@ -289,7 +323,15 @@ if __name__ == "__main__":
                 eos.chemical_potential('dr. seuss')
             self.assertIsInstance(eos.chemical_potential('protons'), float)
 
+
+    class TestEquationOfStateEvaluator(unittest.TestCase):
+        
+        def test_evaluate(self):
+            pho = BlackbodyPhotons(1e13, 40.0, 0.08)
+            ele = FermiDiracElectrons(1e13, 40.0, 0.08)
+            eos = EquationOfStateEvaluator([BlackbodyPhotons, FermiDiracElectrons])
+            self.assertEqual(eos.pressure(1e13, 40.0, 0.08),
+                             pho.pressure() + ele.pressure())
+
     unittest.main()
-
-
 
