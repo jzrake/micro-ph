@@ -18,7 +18,13 @@ BOLTZMANN_CONSTANT = 8.617332400e-11 # MeV/K
 
 class EquationOfStateTerms(object):
     """
-    Describes an EOS term.
+    Base class for EOS terms, which in general are responsible for returning the
+    number and mass density, pressure, internal energy density, entropy density,
+    and chemical potential of some component of the gas.
+
+    Each instantiation of classes inheriting from this represents one point in
+    the (D, T, Y) space of independent thermodynamic variables, density,
+    temperature, and proton fraction := Np/Nb.
     """
     def __init__(self, D, T, Y):
         self.D = D
@@ -44,9 +50,6 @@ class EquationOfStateTerms(object):
 
     def mass_density(self):
         return self.D
-
-    def consistency(self):
-        pass
 
 
 
