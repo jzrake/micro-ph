@@ -6,7 +6,6 @@ import numpy as np
 
 
 if __name__ == "__main__":
-
     """
     Plots the pressure for various components of the EOS as a function of
     density.

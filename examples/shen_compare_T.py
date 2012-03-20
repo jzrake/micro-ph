@@ -6,9 +6,12 @@ import numpy as np
 
 
 if __name__ == "__main__":
-
+    """
+    Compares the pressure contribution from many different components, to that
+    od Shen nucleons.
+    """
     D = 1e13
-    T0, T1 = 10.0, 300.0
+    T0, T1 = 4.0, 200.0
     Ye = 0.08
     temp = np.logspace(np.log10(T0), np.log10(T1), 60)
 

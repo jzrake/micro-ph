@@ -7,8 +7,6 @@ import numpy as np
 import timmes.fdfunc
 
 
-__all__ = ["test_fdintegrand"]
-
 
 def fdfunc1(x, n, eta, beta, use_timmes=False):
     """
@@ -21,7 +19,7 @@ def fdfunc1(x, n, eta, beta, use_timmes=False):
         return np.power(x,n) * np.sqrt(1 + 0.5*x*beta) / (np.exp(x-eta) + 1)
 
 
-def dfermi(n, eta, beta):
+def dfermi(n, eta, beta, use_timmes=False):
     res = quadpack.quad(fdfunc1, 0.0, quadpack.Inf, args=(n,eta,beta,False))
     return res[0]
 

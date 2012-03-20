@@ -19,8 +19,8 @@ BOLTZMANN_CONSTANT = 8.617332400e-11 # MeV/K
 class EquationOfStateTerms(object):
     """
     Base class for EOS terms, which in general are responsible for returning the
-    number and mass density, pressure, internal energy density, entropy density,
-    and chemical potential of some component of the gas.
+    number and mass density, pressure, internal energy, entropy, and chemical
+    potential of some component of the gas.
 
     Each instantiation of classes inheriting from this represents one point in
     the (D, T, Y) space of independent thermodynamic variables, density,
@@ -42,8 +42,21 @@ class EquationOfStateTerms(object):
     def internal_energy(self):
         return self._terms['u']
 
-    def entropy_density(self):
+    def specific_internal_energy(self):
+        """
+        Answer is in MeV/fm^3 per gram/cm^3.
+        """
+        return self._terms['u'] / self.D
+
+    def entropy(self):
         return self._terms['s']
+
+    def specific_entropy(self):
+        """
+        Answer is in (MeV/fm^3)/Kelvin per gram/cm^3.
+        """
+        c2 = LIGHT_SPEED*LIGHT_SPEED
+        return self._terms['s'] / (self.D * c2 * FM3_TO_CM3 / MEV_TO_ERG)
 
     def chemical_potential(self):
         return self._terms['eta'] * self.T
@@ -79,18 +92,24 @@ class EquationOfStateEvaluator(object):
     def internal_energy(self, D, T, Y, derivative=None):
         return self._sample('internal_energy', derivative, D, T, Y)
 
-    def entropy_density(self, D, T, Y, derivative=None):
-        return self._sample('entropy_density', derivative, D, T, Y)
+    def specific_internal_energy(self, D, T, Y, derivative=None):
+        return self._sample('specific_internal_energy', derivative, D, T, Y)
+
+    def entropy(self, D, T, Y, derivative=None):
+        return self._sample('entropy', derivative, D, T, Y)
+
+    def specific_entropy(self, D, T, Y, derivative=None):
+        return self._sample('specific_entropy', derivative, D, T, Y)
 
     def _sample(self, component, derivative, *args):
         """
         Private function, general handler for samples of the EOS components and
         their derivatives.
         """
-        if derivative is None:
+        if not derivative:
             return sum([getattr(t(*args), component)() for t in self._Terms])
 
-        else:
+        elif len(derivative) == 1:
             f = getattr(self, component)
             n = {'D': 0, 'T': 1, 'Y': 2}[derivative]
 
@@ -99,9 +118,23 @@ class EquationOfStateEvaluator(object):
 
             X1[n] += X1[n]*dx
             X0[n] -= X0[n]*dx
-            
+
             return (f(*X1) - f(*X0)) / (X1[n] - X0[n])
 
+        elif len(derivative) == 2:
+            """
+            Evaluating second derivatives. Unfinished.
+            """
+            raise NotImplementedError("Second derivative calculation unfinished.")
+            f = getattr(self, component)
+            n0 = {'D': 0, 'T': 1, 'Y': 2}[derivative[0]]
+            n1 = {'D': 0, 'T': 1, 'Y': 2}[derivative[1]]
+            
+            dx = 1e-8
+            X00, X01, X10, X11 = list(args), list(args), list(args), list(args)
+
+        else:
+            raise ValueError("Derivative string must be 0, 1, or 2 characters")
 
 
 class BlackbodyPhotons(EquationOfStateTerms):
@@ -310,7 +343,7 @@ if __name__ == "__main__":
         def test_eos(self):
             eos = BlackbodyPhotons(1e13, 40.0, 0.08)
             self.assertIsInstance(eos.pressure(), float)
-            self.assertIsInstance(eos.entropy_density(), float)
+            self.assertIsInstance(eos.entropy(), float)
             self.assertEqual(eos.mass_density(), 0.0)
 
 
@@ -323,7 +356,7 @@ if __name__ == "__main__":
             self.assertIsInstance(eos.mass_density(), float)
 
             with self.assertRaises(KeyError):
-                s = eos.entropy_density()
+                s = eos.entropy()
 
 
     class TestNucleonsShenEos3(unittest.TestCase):
@@ -335,7 +368,7 @@ if __name__ == "__main__":
         def test_eos(self):
             eos = NucleonsShenEos3(1e13, 40.0, 0.08)
             self.assertIsInstance(eos.pressure(), float)
-            self.assertIsInstance(eos.entropy_density(), float)
+            self.assertIsInstance(eos.entropy(), float)
 
         def test_chemical_potential(self):
             eos = NucleonsShenEos3(1e13, 40.0, 0.08)
