@@ -74,8 +74,17 @@ class EquationOfStateEvaluator(object):
     instances when it needs and query them for values or create derivatives.
     """
     def __init__(self, Terms=[]):
+        self._num_deriv_dx = 1e-8
         self._Terms = [ ]
         for t in Terms: self.add_term(t)
+
+    def set_numerical_derivative_step(self, dx):
+        """
+        Sets the size of the step used for the numerical derivative
+        estimates. The value is a fraction of the independent variable being
+        stepped.
+        """
+        self._num_deriv_step = dx
 
     def add_term(self, term):
         """
@@ -113,7 +122,7 @@ class EquationOfStateEvaluator(object):
             f = getattr(self, component)
             n = {'D': 0, 'T': 1, 'Y': 2}[derivative]
 
-            dx = 1e-8
+            dx = self._num_deriv_dx
             X0, X1 = list(args), list(args)
 
             X1[n] += X1[n]*dx
@@ -135,6 +144,7 @@ class EquationOfStateEvaluator(object):
 
         else:
             raise ValueError("Derivative string must be 0, 1, or 2 characters")
+
 
 
 class BlackbodyPhotons(EquationOfStateTerms):

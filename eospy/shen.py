@@ -159,14 +159,53 @@ def sample(table, col, D, T, Y, order=3):
     Samples the EOS table using interpolation.
     """
 
-    nD, nT, nY = table['p'].shape
+    nD, nT, nY = table['Yp'].shape
 
     logD0, logD1 = table['log10_rhoB'][0,0,0], table['log10_rhoB'][-1,0,0]
     logT0, logT1 = table['logT'      ][0,0,0], table['logT'      ][0,-1,0]
     Y0   ,    Y1 = table['Yp'        ][0,0,0], table['Yp'        ][0,0,-1]
 
-    x = (np.log10(D) - logD0) / (logD1 - logD0) * nD
-    y = (np.log10(T) - logT0) / (logT1 - logT0) * nT
-    z = (Y - Y0) / (Y1 - Y0) * nY
+    x = (np.log10(D) - logD0) / (logD1 - logD0) * (nD-1)
+    y = (np.log10(T) - logT0) / (logT1 - logT0) * (nT-1)
+    z = (Y - Y0) / (Y1 - Y0) * (nY-1)
 
     return ndimage.map_coordinates(table[col], [[x],[y],[z]], order=order)[0]
+
+
+
+
+if __name__ == "__main__":
+    """
+    Runs some tests.
+    """
+    import unittest
+    print "testing", __file__
+
+    class TestShenSampling(unittest.TestCase):
+
+        def test_splines(self):
+            table = read_hdf5("data/eos3.h5", cols=['logT', 'log10_rhoB', 'Yp', 'nB'])
+
+            for i in range(0,table['Yp'].shape[0],10):
+                D = 10**table['log10_rhoB'][i,0,0]
+                T = 10**table['logT'      ][i,0,0]
+                Y =     table['Yp'        ][i,0,0]
+                n =     table['nB'        ][i,0,0]
+                self.assertAlmostEqual(n, sample(table, 'nB', D, T, Y))
+
+            for i in range(0,table['Yp'].shape[1],10):
+                D = 10**table['log10_rhoB'][0,i,0]
+                T = 10**table['logT'      ][0,i,0]
+                Y =     table['Yp'        ][0,i,0]
+                n =     table['nB'        ][0,i,0]
+                self.assertAlmostEqual(n, sample(table, 'nB', D, T, Y))
+
+            for i in range(0,table['Yp'].shape[2],10):
+                D = 10**table['log10_rhoB'][0,0,i]
+                T = 10**table['logT'      ][0,0,i]
+                Y =     table['Yp'        ][0,0,i]
+                n =     table['nB'        ][0,0,i]
+                self.assertAlmostEqual(n, sample(table, 'nB', D, T, Y))
+
+    unittest.main()
+
