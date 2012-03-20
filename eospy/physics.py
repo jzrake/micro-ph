@@ -70,17 +70,37 @@ class EquationOfStateEvaluator(object):
         """
         self._Terms.append(term)
 
-    def number_density(self, D, T, Y):
-        return sum([t(D, T, Y).number_density() for t in self._Terms])
+    def number_density(self, D, T, Y, derivative=None):
+        return self._sample('number_density', derivative, D, T, Y)
 
-    def pressure(self, D, T, Y):
-        return sum([t(D, T, Y).pressure() for t in self._Terms])
+    def pressure(self, D, T, Y, derivative=None):
+        return self._sample('pressure', derivative, D, T, Y)
 
-    def internal_energy(self, D, T, Y):
-        return sum([t(D, T, Y).internal_energy() for t in self._Terms])
+    def internal_energy(self, D, T, Y, derivative=None):
+        return self._sample('internal_energy', derivative, D, T, Y)
 
-    def entropy_density(self, D, T, Y):
-        return sum([t(D, T, Y).entropy_density() for t in self._Terms])
+    def entropy_density(self, D, T, Y, derivative=None):
+        return self._sample('entropy_density', derivative, D, T, Y)
+
+    def _sample(self, component, derivative, *args):
+        """
+        Private function, general handler for samples of the EOS components and
+        their derivatives.
+        """
+        if derivative is None:
+            return sum([getattr(t(*args), component)() for t in self._Terms])
+
+        else:
+            f = getattr(self, component)
+            n = {'D': 0, 'T': 1, 'Y': 2}[derivative]
+
+            dx = 1e-8
+            X0, X1 = list(args), list(args)
+
+            X1[n] += X1[n]*dx
+            X0[n] -= X0[n]*dx
+            
+            return (f(*X1) - f(*X0)) / (X1[n] - X0[n])
 
 
 
@@ -332,6 +352,13 @@ if __name__ == "__main__":
             eos = EquationOfStateEvaluator([BlackbodyPhotons, FermiDiracElectrons])
             self.assertEqual(eos.pressure(1e13, 40.0, 0.08),
                              pho.pressure() + ele.pressure())
+
+        def test_derivatives(self):
+            eos = EquationOfStateEvaluator([BlackbodyPhotons, FermiDiracElectrons])
+            self.assertIsInstance(eos.pressure(1e13, 40.0, 0.08), float)
+            self.assertIsInstance(eos.pressure(1e13, 40.0, 0.08, 'D'), float)
+            self.assertIsInstance(eos.pressure(1e13, 40.0, 0.08, 'T'), float)
+            self.assertIsInstance(eos.pressure(1e13, 40.0, 0.08, 'Y'), float)
 
     unittest.main()
 
