@@ -239,6 +239,7 @@ class FermiDiracPositrons(FermionComponent):
         self._eval_pairs()
 
 
+
 class ColdElectrons(FermionComponent):
     """
     Evaluates the thermodynamic variables for a cold (fully degenerate) electron
