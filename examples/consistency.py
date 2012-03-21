@@ -37,9 +37,41 @@ def PlotConsistency(eos, T0, T1, D0, D1, Ye=0.08, Kelvin=True, N=60):
     plt.show()
 
 
+def ShenConsistency():
+    """
+    Uses the 5-point derivative to check the thermodynamic consistency
+    relation
+
+    p = rho^2 d(u)/d(rho) + T dp/dT.
+    
+    """
+    table = shen.read_hdf5("data/eos3.h5", cols=['p', 'Eint', 'logT', 'nB', 'S', 'F'])
+
+    F = table['F'] + 938.0
+    E = table['Eint'] + 931.494
+    T = 10**table['logT']
+    S = table['S']
+    Z = abs(1.0 - (E - T*S)/F)
+
+    print "free energy definition:", Z.mean(), Z.var()
+
+    p = table['p']
+    nB = table['nB']
+
+    dEdnB   = shen.derivative2(E, nB, 0)
+    dpdlogT = shen.derivative2(p, table['logT'], 1)
+
+    # This is the problem right now:
+    print p[100,80,10], (nB**2 * dEdnB)[100,80,10] + dpdlogT[100,80,10]
+
+
+
+ShenConsistency()
+
+
 #eos = EquationOfStateEvaluator([FermiDiracElectrons, FermiDiracPositrons])
-eos = EquationOfStateEvaluator([BlackbodyPhotons])
-PlotConsistency(eos, 5, 11, -3, 14)
+#eos = EquationOfStateEvaluator([BlackbodyPhotons])
+#PlotConsistency(eos, 5, 11, -3, 14)
 
 #eos = EquationOfStateEvaluator([NucleonsShenEos3])
 #eos.set_numerical_derivative_step(1e-4)

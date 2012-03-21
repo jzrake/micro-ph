@@ -45,6 +45,7 @@
 from scipy import ndimage
 import numpy as np
 import h5py
+import physics
 
 
 __all__ = ["load_eos3", "write_hdf5", "read_hdf5", "rebuild_hdf5", "sample"]
@@ -188,9 +189,12 @@ def derivative5(data, xs, ax):
     f3 = np.roll(data, +1, axis=ax)
     f4 = np.roll(data, +2, axis=ax)
 
-    x0 = np.roll(xs, +1, axis=ax)
+    x0 = np.roll(xs, -2, axis=ax)
     x1 = np.roll(xs, -1, axis=ax)
-    return (-f0 + 8*f1 - 8*f3 + f4) / (6*(x1 - x0))
+    x3 = np.roll(xs, +1, axis=ax)
+    x4 = np.roll(xs, +2, axis=ax)
+
+    return (-f0 + 8*f1 - 8*f3 + f4) / (-x0 + 8*x1 - 8*x3 + x4)
 
 
 
@@ -252,6 +256,27 @@ if __name__ == "__main__":
             # self.assertAlmostEqual((T/p) * (p1-p0) / (T1-T0), (T/p)*dpdT[15,15,15], places=2)
             print (T/p) * (p1-p0) / (T1-T0), (T/p)*dpdT2[15,15,15], (T/p)*dpdT5[15,15,15]
 
+        def test_pressure(self):
+            """
+            Uses the 5-point derivative to check the definition of the pressure
+            in terms of the Helmholtz free energy.
+            """
+            table = read_hdf5("data/eos3.h5", cols=['p', 'F', 'nB', 'Eint', 'logT', 'S'])
+            dFdnB = derivative5(table['F'], table['nB'], 0)
+            print (dFdnB * table['nB']**2)[10,10,10], table['p'][10,10,10]
+
+        def test_consistency(self):
+            """
+            Uses the 5-point derivative to check the thermodynamic consistency
+            relation
+
+            p = rho^2 d(u)/d(rho) + T dp/dT.
+
+            """
+            table = read_hdf5("data/eos3.h5", cols=['p', 'Eint', 'logT', 'nB'])
+            dEdnB = derivative5(table['Eint'], table['nB'], 0)
+            dpdlogT = derivative5(table['p'], table['logT'], 1)
+            print "consistency:", (table['p'] - dEdnB * table['nB']**2 - dpdlogT)[10,10,10]
 
     unittest.main()
 
