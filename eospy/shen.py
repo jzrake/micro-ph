@@ -173,6 +173,26 @@ def sample(table, col, D, T, Y, order=3):
 
 
 
+def derivative2(data, xs, ax):
+    f0 = np.roll(data, +1, axis=ax)
+    f1 = np.roll(data, -1, axis=ax)
+    x0 = np.roll(xs, +1, axis=ax)
+    x1 = np.roll(xs, -1, axis=ax)
+    return (f1 - f0) / (x1 - x0)
+
+
+
+def derivative5(data, xs, ax):
+    f0 = np.roll(data, -2, axis=ax)
+    f1 = np.roll(data, -1, axis=ax)
+    f3 = np.roll(data, +1, axis=ax)
+    f4 = np.roll(data, +2, axis=ax)
+
+    x0 = np.roll(xs, +1, axis=ax)
+    x1 = np.roll(xs, -1, axis=ax)
+    return (-f0 + 8*f1 - 8*f3 + f4) / (6*(x1 - x0))
+
+
 
 if __name__ == "__main__":
     """
@@ -206,6 +226,32 @@ if __name__ == "__main__":
                 Y =     table['Yp'        ][0,0,i]
                 n =     table['nB'        ][0,0,i]
                 self.assertAlmostEqual(n, sample(table, 'nB', D, T, Y))
+
+        def test_derivatives(self):
+            """
+            Examines the difference in the derivative estimate when taken by
+            finite differencing the table directly, versus spline-sampling
+            nearby points.
+            """
+            table = read_hdf5("data/eos3.h5", cols=['logT', 'log10_rhoB', 'Yp', 'p'])
+
+            dpdT2 = derivative2(table['p'], 10**table['logT'], 1)
+            dpdT5 = derivative5(table['p'], 10**table['logT'], 1)
+
+            D = 10**table['log10_rhoB'][15,15,15]
+            T = 10**table['logT'      ][15,15,15]
+            Y =     table['Yp'        ][15,15,15]
+            p =     table['p'         ][15,15,15]
+
+            T0 = T*(1-1e-8)
+            T1 = T*(1+1e-8)
+            p0 = sample(table, 'p', D, T0, Y)
+            p1 = sample(table, 'p', D, T1, Y)
+
+            # multiplying by T/p is just to normalize the result near 1.0
+            # self.assertAlmostEqual((T/p) * (p1-p0) / (T1-T0), (T/p)*dpdT[15,15,15], places=2)
+            print (T/p) * (p1-p0) / (T1-T0), (T/p)*dpdT2[15,15,15], (T/p)*dpdT5[15,15,15]
+
 
     unittest.main()
 

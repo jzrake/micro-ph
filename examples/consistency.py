@@ -26,7 +26,8 @@ def PlotConsistency(eos, T0, T1, D0, D1, Ye=0.08, Kelvin=True, N=60):
     for T in temp:
         kT = T * BOLTZMANN_CONSTANT if Kelvin else T
         c = np.array([consistency(D, kT, Ye) for D in dens])
-        lab = r"$T=10^{%d}\rm{K}$" % np.log10(T) if Kelvin else r"$T=%2.1f\rm{MeV}$" % T
+        lab = r"$T=10^{%d}\rm{K}$" % np.log10(T) if Kelvin \
+            else r"$T=%2.1f\rm{MeV}$" % T
         plt.loglog(dens, c, '-o', label=lab)
 
     plt.xlabel(r"$\rho \ \rm{g/cm^3}$", fontsize=16)
@@ -36,19 +37,11 @@ def PlotConsistency(eos, T0, T1, D0, D1, Ye=0.08, Kelvin=True, N=60):
     plt.show()
 
 
+#eos = EquationOfStateEvaluator([FermiDiracElectrons, FermiDiracPositrons])
+eos = EquationOfStateEvaluator([BlackbodyPhotons])
+PlotConsistency(eos, 5, 11, -3, 14)
 
-if __name__ == "__main__":
-    """
-    Checks the thermodynamic consistency relation:
-
-    p = rho^2 d(u)/d(rho) + T dp/dT
-    """
-
-    #eos = EquationOfStateEvaluator([FermiDiracElectrons, FermiDiracPositrons])
-    eos = EquationOfStateEvaluator([BlackbodyPhotons])
-    PlotConsistency(eos, 5, 11, -3, 14)
-
-    eos = EquationOfStateEvaluator([NucleonsShenEos3])
-    eos.set_numerical_derivative_step(1e-4)
-    PlotConsistency(eos, np.log10(0.5), np.log10(260.0), 6, 15, Kelvin=False, N=5)
+#eos = EquationOfStateEvaluator([NucleonsShenEos3])
+#eos.set_numerical_derivative_step(1e-4)
+#PlotConsistency(eos, np.log10(0.5), np.log10(260.0), 6, 15, Kelvin=False, N=5)
 
