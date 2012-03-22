@@ -45,13 +45,15 @@ def ShenConsistency():
     p = rho^2 d(u)/d(rho) + T dp/dT.
     
     """
-    table = shen.read_hdf5("data/eos3.h5",
-                           cols=['p', 'Eint', 'logT', 'nB', 'S', 'F'])
+    cols = ['log10_rhoB', 'p', 'Eint', 'logT', 'nB', 'Yp', 'S', 'F']
+    table = shen.read_hdf5("data/eos3.h5", cols=cols)
 
+    logT = table['logT']
+    D = 10**table['log10_rhoB']
+    T = 10**table['logT']
+    Y = table['Yp']
     F = table['F'] + 938.0
     E = table['Eint'] + 931.494
-    T = 10**table['logT']
-    logT = table['logT']
     S = table['S']
     Z = abs(1.0 - (E - T*S)/F)
     print "average error in free energy definition:", Z.mean()
@@ -66,21 +68,40 @@ def ShenConsistency():
     dEdnB   = shen.derivative5(E, nB, 0)
     dpdT    = shen.derivative5(p, T, 1)
     dpdlogT = shen.derivative5(p, logT, 1)
-    print "5-point stencil, lin spacing in T:",\
-        (nB**2 * dEdnB)[100,80,10] + (T*dpdT)[100,80,10]
-    print "5-point stencil, log spacing in T:",\
-        (nB**2 * dEdnB)[100,80,10] + (dpdlogT)[100,80,10] / np.log(10)
+
+    Plin5 = nB**2 * dEdnB + T*dpdT
+    Plog5 = nB**2 * dEdnB + dpdlogT / np.log(10)
+
+    print "5-point stencil, lin spacing in T:", Plin5[100,80,10]
+    print "5-point stencil, log spacing in T:", Plog5[100,80,10]
 
     # 2-point stencil
     # --------------------------------------------------------------------------
     dEdnB   = shen.derivative2(E, nB, 0)
     dpdT    = shen.derivative2(p, T, 1)
     dpdlogT = shen.derivative2(p, logT, 1)
-    print "2-point stencil, lin spacing in T:",\
-        (nB**2 * dEdnB)[100,80,10] + (T*dpdT)[100,80,10]
-    print "2-point stencil, log spacing in T:",\
-        (nB**2 * dEdnB)[100,80,10] + (dpdlogT)[100,80,10] / np.log(10)
 
+    Plin2 = nB**2 * dEdnB + T*dpdT
+    Plog2 = nB**2 * dEdnB + dpdlogT / np.log(10)
+
+    print "2-point stencil, lin spacing in T:", Plin2[100,80,10]
+    print "2-point stencil, log spacing in T:", Plog2[100,80,10]
+
+    def do_image(P, title=None, Yi=10):
+        plt.figure()
+        plt.imshow(np.log10(abs(1.0 - P/p)[2:-2,2:-2,Yi]).T, origin='lower',
+                   interpolation='nearest')
+        plt.title(title + r" $Y_p=%3.2f$" % Y[0,0,Yi])
+        plt.colorbar()
+        plt.xlabel(r"$\rho \ \rm{g/cm^3}$", fontsize=16)
+        plt.ylabel(r"$T \ \rm{MeV}$", fontsize=16)
+
+    do_image(Plin2, title='Linear 2-point stencil', Yi=7)
+    do_image(Plog2, title='Log 2-point stencil', Yi=7)
+
+    do_image(Plin5, title='Linear 5-point stencil', Yi=7)
+    do_image(Plog5, title='Log 5-point stencil', Yi=7)
+    plt.show()
 
 
 ShenConsistency()
