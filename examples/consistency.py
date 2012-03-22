@@ -21,7 +21,6 @@ def PlotConsistency(eos, T0, T1, D0, D1, Ye=0.08, Kelvin=True, N=60):
 
     temp = np.logspace(T0, T1, 3)
     dens = np.logspace(D0, D1, N)
-    Ye = 0.08
 
     for T in temp:
         kT = T * BOLTZMANN_CONSTANT if Kelvin else T
@@ -37,32 +36,50 @@ def PlotConsistency(eos, T0, T1, D0, D1, Ye=0.08, Kelvin=True, N=60):
     plt.show()
 
 
+
 def ShenConsistency():
     """
-    Uses the 5-point derivative to check the thermodynamic consistency
+    Uses different derivative estimates to check the thermodynamic consistency
     relation
 
     p = rho^2 d(u)/d(rho) + T dp/dT.
     
     """
-    table = shen.read_hdf5("data/eos3.h5", cols=['p', 'Eint', 'logT', 'nB', 'S', 'F'])
+    table = shen.read_hdf5("data/eos3.h5",
+                           cols=['p', 'Eint', 'logT', 'nB', 'S', 'F'])
 
     F = table['F'] + 938.0
     E = table['Eint'] + 931.494
     T = 10**table['logT']
+    logT = table['logT']
     S = table['S']
     Z = abs(1.0 - (E - T*S)/F)
-
-    print "free energy definition:", Z.mean(), Z.var()
+    print "average error in free energy definition:", Z.mean()
 
     p = table['p']
     nB = table['nB']
 
-    dEdnB   = shen.derivative2(E, nB, 0)
-    dpdlogT = shen.derivative2(p, table['logT'], 1)
+    print "real pressure:                    ", p[100,80,10]
 
-    # This is the problem right now:
-    print p[100,80,10], (nB**2 * dEdnB)[100,80,10] + dpdlogT[100,80,10]
+    # 5-point stencil
+    # --------------------------------------------------------------------------
+    dEdnB   = shen.derivative5(E, nB, 0)
+    dpdT    = shen.derivative5(p, T, 1)
+    dpdlogT = shen.derivative5(p, logT, 1)
+    print "5-point stencil, lin spacing in T:",\
+        (nB**2 * dEdnB)[100,80,10] + (T*dpdT)[100,80,10]
+    print "5-point stencil, log spacing in T:",\
+        (nB**2 * dEdnB)[100,80,10] + (dpdlogT)[100,80,10] / np.log(10)
+
+    # 2-point stencil
+    # --------------------------------------------------------------------------
+    dEdnB   = shen.derivative2(E, nB, 0)
+    dpdT    = shen.derivative2(p, T, 1)
+    dpdlogT = shen.derivative2(p, logT, 1)
+    print "2-point stencil, lin spacing in T:",\
+        (nB**2 * dEdnB)[100,80,10] + (T*dpdT)[100,80,10]
+    print "2-point stencil, log spacing in T:",\
+        (nB**2 * dEdnB)[100,80,10] + (dpdlogT)[100,80,10] / np.log(10)
 
 
 
