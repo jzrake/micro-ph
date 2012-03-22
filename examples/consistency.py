@@ -104,7 +104,45 @@ def ShenConsistency():
     plt.show()
 
 
-ShenConsistency()
+
+def ShenPressure():
+    """
+    Uses the 5-point derivative to check the definition of the pressure in terms
+    of the Helmholtz free energy.
+    """
+    cols = cols=['log10_rhoB', 'p', 'F', 'nB', 'Eint', 'logT', 'S']
+    table = shen.read_hdf5("data/eos3.h5", cols=cols)
+ 
+    extent = [table['log10_rhoB'][2,0,0], table['log10_rhoB'][-2,0,0],
+              table['logT'][0,2,0], table['logT'][0,-2,0]]
+    aspect = (extent[1] - extent[0]) / (extent[3] - extent[2])
+
+    def do_image(C, title=None, Yi=10):
+        plt.figure()
+
+        plt.imshow(C[2:-2,2:-2,Yi].T, origin='lower', interpolation='nearest',
+                   extent=extent, aspect=aspect)
+
+        plt.colorbar()
+        plt.title(title, fontsize=18)
+        plt.xlabel(r"$\log_{10} \rho \ \rm{g/cm^3}$", fontsize=16)
+        plt.ylabel(r"$\log_{10} T \ \rm{MeV}$", fontsize=16)
+
+    tex = r"$p - n_B^2 \frac{\partial F}{\partial n_B}$"
+
+    dFdnB = shen.derivative2(table['F'], table['nB'], 0)
+    p = dFdnB * table['nB']**2
+    do_image(np.log10(abs(1.0 - p/table['p'])), title=r"2-point derivative " + tex)
+
+    dFdnB = shen.derivative5(table['F'], table['nB'], 0)
+    p = dFdnB * table['nB']**2
+    do_image(np.log10(abs(1.0 - p/table['p'])), title=r"5-point derivative " + tex)
+
+    plt.show()
+
+
+ShenPressure()
+#ShenConsistency()
 
 
 #eos = EquationOfStateEvaluator([FermiDiracElectrons, FermiDiracPositrons])

@@ -22,6 +22,8 @@
  * -----------------------------------------------------------------------------
  """
 
-__all__ = ["tests", "physics", "fermion", "fdfunc", "shen"]
-
 import physics
+import fermion
+import fdfunc
+import shen
+

@@ -48,12 +48,10 @@ import h5py
 import physics
 
 
-__all__ = ["load_eos3", "write_hdf5", "read_hdf5", "rebuild_hdf5", "sample"]
 
-
-col_names = ['logT', 'log10_rhoB', 'nB', 'Yp', 'F', 'Eint', 'S', 'A', 'Z',
+_col_names = ['logT', 'log10_rhoB', 'nB', 'Yp', 'F', 'Eint', 'S', 'A', 'Z',
              'MN', 'Xn', 'Xp', 'Xa', 'XA', 'p', 'un', 'up', 'ML', 'XL']
-var_index = { n:i for i,n in enumerate(col_names) }
+_var_index = { n:i for i,n in enumerate(_col_names) }
 
 
 def load_eos3(fname):
@@ -65,7 +63,7 @@ def load_eos3(fname):
     --------------------------------------------------------
 
     A (110 x 91 x 65 x 19) numpy array. The axes are (D,T,Yp,q) where q is the
-    quantity given by the col_names list or var_index dictionary.
+    quantity given by the _col_names list or _var_index dictionary.
 
     Notes:
     --------------------------------------------------------
@@ -105,11 +103,11 @@ def load_eos3(fname):
 
         elif action == 'read_data_line':
             data = [float(logT)] + [float(x) for x in line.split()]
-            D = float(data[var_index['log10_rhoB']])
             iD += 1
             table[iD, iT, iY] = data
 
     return table
+
 
 
 def write_hdf5(table, fname, cols="all"):
@@ -122,13 +120,14 @@ def write_hdf5(table, fname, cols="all"):
 
     h5f = h5py.File(fname, "w")
 
-    cols = [c for c in col_names if c in cols or cols == "all"]
+    cols = [c for c in _col_names if c in cols or cols == "all"]
 
-    for col in col_names:
-        h5f[col] = table[:,:,:,var_index[col]]
+    for col in _col_names:
+        h5f[col] = table[:,:,:,_var_index[col]]
 
     h5f.close()
     return None
+
 
 
 def read_hdf5(fname, cols="all"):
@@ -137,13 +136,14 @@ def read_hdf5(fname, cols="all"):
     h5f = h5py.File(fname, "r")
     table = { }
 
-    cols = [c for c in col_names if c in cols or cols == "all"]
+    cols = [c for c in _col_names if c in cols or cols == "all"]
 
     for col in cols:
         table[col] = h5f[col].value
 
     h5f.close()
     return table
+
 
 
 def rebuild_hdf5(ascii, h5, cols="all"):
@@ -153,6 +153,7 @@ def rebuild_hdf5(ascii, h5, cols="all"):
     """
     table = load_eos3(ascii)
     write_hdf5(table, h5, cols)
+
 
 
 def sample(table, col, D, T, Y, order=3):
