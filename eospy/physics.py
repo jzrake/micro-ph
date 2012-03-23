@@ -177,8 +177,9 @@ class NeutrinoComponent(EquationOfStateTerms):
     """
     Represents an EOS component of neutrinos and anti-neutrinos.
     """
-    def __init__(self, eta, T):
-        self.eta = eta
+    def __init__(self, sgn, mu, T):
+        self.sgn = sgn
+        self.mu = mu
         self.T = T
         self._terms = { }
         self._set_terms()
@@ -188,12 +189,12 @@ class NeutrinoComponent(EquationOfStateTerms):
         Volume = np.power(np.pi, 2) * np.power(HBAR_C/self.T, 3)
         Energy = self.T
 
-        f = fermion.neutrino_everything(+1, self.eta)
+        f = fermion.neutrino_everything(self.sgn, self.mu/self.T)
 
         f['n'] *= (1.0 / Volume)
         f['p'] *= (Energy / Volume)
         f['u'] *= (Energy / Volume)
-        f['s'] *= (BOLTZMANN_CONSTANT / Volume)
+        f['s']  = (f['u'] + f['p']) / self.T - f['n'] * f['eta']
 
         for k in "npus":
             self._terms[k] = f[k]
@@ -355,8 +356,8 @@ class NucleonsShenEos3(EquationOfStateTerms):
         t['p'] = shen.sample(e, 'p'    , D, kT, Ye)
         t['u'] = shen.sample(e, 'Eint' , D, kT, Ye) * t['n']
         t['s'] = shen.sample(e, 'S'    , D, kT, Ye) * t['n']
-        t['mu_n'] = shen.sample(e, 'un', D, kT, Ye)
-        t['mu_p'] = shen.sample(e, 'up', D, kT, Ye)
+        t['mu_n'] = shen.sample(e, 'un', D, kT, Ye) + 938.0
+        t['mu_p'] = shen.sample(e, 'up', D, kT, Ye) + 938.0
 
 
 

@@ -171,7 +171,6 @@ def neutrino_everything(sgn, eta):
     res['n'] = F4
     res['p'] = F6 / 3.0
     res['u'] = F6
-    res['s'] = (res['u'] + res['p'])/beta - res['n'] * eta
     res['eta'] = eta
 
     return res
