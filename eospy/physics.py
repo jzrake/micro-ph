@@ -173,9 +173,15 @@ class BlackbodyPhotons(EquationOfStateTerms):
 
 
 
+class NeutrinoComponent(EquationOfStateTerms):
+    """
+    Represents an EOS component of neutrinos and anti-neutrinos.
+    """
+
+
 class FermionComponent(EquationOfStateTerms):
     """
-    Represents an EOS component of electrons and/or positrons.
+    Represents an EOS component of electrons or positrons.
 
     Notes:
     ----------------------------------------------------------------------------

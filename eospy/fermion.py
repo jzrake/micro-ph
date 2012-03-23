@@ -83,7 +83,7 @@ def fermion_everything(sgn, eta, beta):
     Parameters:
     --------------------------------------------------------
 
-    eta  : mu/kT   ... chemical potential (including rest-mass)
+    eta  : mu/kT   ... chemical potential (excluding rest-mass)
     beta : kT/mc^2 ... relativity parameter
 
 
@@ -98,11 +98,11 @@ def fermion_everything(sgn, eta, beta):
 
     Return values are normalized with the following units:
 
-    Volume : mc^2 (h/mc)^3
+    Volume : pi^2 (h/mc)^3
     Energy : mc^2
 
     The formulae below are taken from Beaudet & Tassoul (1971). The idea of
-    including the rest-mass in the chemical potential is inspired by TA99.
+    suctracting the rest-mass from the chemical potential is inspired by TA99.
 
     """
     # For positrons, see TA99 eqn (5)
@@ -131,6 +131,55 @@ def fermion_everything(sgn, eta, beta):
         res['u'] += 2*res['n']
 
     return res
+
+
+
+def neutrino_everything(sgn, eta):
+    """
+    Evaluates the dimensionless number density, pressure, and internal energy,
+    and entropy.
+
+    Parameters:
+    --------------------------------------------------------
+
+    eta  : mu/kT   ... chemical potential
+
+
+    Returns:
+    --------------------------------------------------------
+
+    A dictionary whose keys are self-explanatory.
+
+
+    Notes:
+    --------------------------------------------------------
+
+    Return values are normalized with the following units:
+
+    Volume : pi^2 (hc/kT)^3
+    Energy : kT
+
+    The formulae below are taken from Beaudet & Tassoul (1971). The idea of
+    suctracting the rest-mass from the chemical potential is inspired by TA99.
+
+    """
+    # For anti-neutrinos, see TA99 eqn (5)
+    if sgn < 0:
+        eta = -eta
+
+    F4 = Fn_all(4.0, eta, 0.0)[0]
+    F6 = Fn_all(6.0, eta, 0.0)[0]
+
+    res = { }
+
+    res['n'] = F4
+    res['p'] = F6 / 3.0
+    res['u'] = F6
+    res['s'] = (res['u'] + res['p'])/beta - res['n'] * eta
+    res['eta'] = eta
+
+    return res
+
 
 
 def electron_everything(sgn, eta, beta):

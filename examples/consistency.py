@@ -2,10 +2,11 @@
 
 from eospy.physics import *
 from matplotlib import pyplot as plt
+from matplotlib import ticker
 import numpy as np
 
 
-def PlotConsistency(eos, T0, T1, D0, D1, Ye=0.08, Kelvin=True, N=60):
+def PlotConsistency(eos, T0, T1, D0, D1, Ye=0.08, kelvin=True, N=60, title=None):
     """
     Checks the thermodynamic consistency relation:
 
@@ -23,12 +24,13 @@ def PlotConsistency(eos, T0, T1, D0, D1, Ye=0.08, Kelvin=True, N=60):
     dens = np.logspace(D0, D1, N)
 
     for T in temp:
-        kT = T * BOLTZMANN_CONSTANT if Kelvin else T
+        kT = T * BOLTZMANN_CONSTANT if kelvin else T
         c = np.array([consistency(D, kT, Ye) for D in dens])
-        lab = r"$T=10^{%d}\rm{K}$" % np.log10(T) if Kelvin \
-            else r"$T=%2.1f\rm{MeV}$" % T
+        LT = np.log10(T)
+        lab = r"$T=10^{%d}\rm{K}$" % LT if kelvin else r"$T=%3.2f \ \rm{MeV}$" % T
         plt.loglog(dens, c, '-o', label=lab)
 
+    if title: plt.title(title)
     plt.xlabel(r"$\rho \ \rm{g/cm^3}$", fontsize=16)
     plt.ylabel(r"$1 - \frac{\rho^2}{p} \frac{\partial E}{\partial \rho} - " +
                r"\frac{T}{p} \frac{\partial p}{\partial T}$", fontsize=18)
@@ -89,7 +91,7 @@ def ShenConsistency():
 
     def do_image(P, title=None, Yi=10):
         plt.figure()
-        plt.imshow(np.log10(abs(1.0 - P/p)[2:-2,2:-2,Yi]).T, origin='lower',
+        plt.imshow(np.log10(abs(1.0 - P/p))[2:-2,2:-2,Yi].T, origin='lower',
                    interpolation='nearest')
         plt.title(title + r" $Y_p=%3.2f$" % Y[0,0,Yi])
         plt.colorbar()
@@ -112,23 +114,29 @@ def ShenPressure():
     """
     cols = cols=['log10_rhoB', 'p', 'F', 'nB', 'Eint', 'logT', 'S']
     table = shen.read_hdf5("data/eos3.h5", cols=cols)
- 
+
     extent = [table['log10_rhoB'][2,0,0], table['log10_rhoB'][-2,0,0],
               table['logT'][0,2,0], table['logT'][0,-2,0]]
     aspect = (extent[1] - extent[0]) / (extent[3] - extent[2])
 
+
+    majorFormatter = ticker.FuncFormatter(
+        lambda x, pos: r"$10^{%d}$" % int(x) if np.floor(x) == x else "")
+
     def do_image(C, title=None, Yi=10):
-        plt.figure()
+        fig = plt.figure()
 
         plt.imshow(C[2:-2,2:-2,Yi].T, origin='lower', interpolation='nearest',
                    extent=extent, aspect=aspect)
 
         plt.colorbar()
-        plt.title(title, fontsize=18)
+        fig.suptitle(title, fontsize=14)
+        fig.axes[0].get_xaxis().set_major_formatter(majorFormatter)
+        fig.axes[0].get_yaxis().set_major_formatter(majorFormatter)
         plt.xlabel(r"$\log_{10} \rho \ \rm{g/cm^3}$", fontsize=16)
         plt.ylabel(r"$\log_{10} T \ \rm{MeV}$", fontsize=16)
 
-    tex = r"$p - n_B^2 \frac{\partial F}{\partial n_B}$"
+    tex = r"$(p - n_B^2 \frac{\partial F}{\partial n_B})/p$"
 
     dFdnB = shen.derivative2(table['F'], table['nB'], 0)
     p = dFdnB * table['nB']**2
@@ -141,13 +149,13 @@ def ShenPressure():
     plt.show()
 
 
-ShenPressure()
-#ShenConsistency()
+#ShenPressure()
+ShenConsistency()
 
 
 #eos = EquationOfStateEvaluator([FermiDiracElectrons, FermiDiracPositrons])
 #eos = EquationOfStateEvaluator([BlackbodyPhotons])
-#PlotConsistency(eos, 5, 11, -3, 14)
+#PlotConsistency(eos, -2, 2, -3, 14, kelvin=False, N=20, title=r"$e_+/e_-$ pair consistency")
 
 #eos = EquationOfStateEvaluator([NucleonsShenEos3])
 #eos.set_numerical_derivative_step(1e-4)
