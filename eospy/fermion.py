@@ -100,7 +100,7 @@ def fermion_everything(sgn, eta, beta):
     Energy : mc^2
 
     The formulae below are taken from Beaudet & Tassoul (1971). The idea of
-    suctracting the rest-mass from the chemical potential is inspired by TA99.
+    subtracting the rest-mass from the chemical potential is inspired by TA99.
 
     """
     # For positrons, see TA99 eqn (5)
@@ -121,7 +121,6 @@ def fermion_everything(sgn, eta, beta):
     res['n'] = (1./2.) * t15 * B15 * (F + 1.0*beta*G)
     res['p'] = (1./3.) * t15 * B25 * (G + 0.5*beta*H)
     res['u'] = (1./2.) * t15 * B25 * (G + 1.0*beta*H)
-    res['s'] = (res['u'] + res['p'])/beta - res['n'] * eta
     res['eta'] = eta
 
     # Correct for the self-energy of positrons, TA99 eqn (9)
@@ -157,10 +156,9 @@ def neutrino_everything(sgn, eta):
     Volume : pi^2 (hc/kT)^3
     Energy : kT
 
-    The formulae below are taken from Beaudet & Tassoul (1971). The idea of
-    suctracting the rest-mass from the chemical potential is inspired by TA99.
-
+    The formulae below are taken from Beaudet & Tassoul (1971).
     """
+
     # For anti-neutrinos, see TA99 eqn (5)
     if sgn < 0:
         eta = -eta

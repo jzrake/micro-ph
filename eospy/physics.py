@@ -177,6 +177,29 @@ class NeutrinoComponent(EquationOfStateTerms):
     """
     Represents an EOS component of neutrinos and anti-neutrinos.
     """
+    def __init__(self, eta, T):
+        self.eta = eta
+        self.T = T
+        self._terms = { }
+        self._set_terms()
+
+    def _set_terms(self):
+
+        Volume = np.power(np.pi, 2) * np.power(HBAR_C/self.T, 3)
+        Energy = self.T
+
+        f = fermion.neutrino_everything(+1, self.eta)
+
+        f['n'] *= (1.0 / Volume)
+        f['p'] *= (Energy / Volume)
+        f['u'] *= (Energy / Volume)
+        f['s'] *= (BOLTZMANN_CONSTANT / Volume)
+
+        for k in "npus":
+            self._terms[k] = f[k]
+
+        self._terms['eta'] = f['eta']
+
 
 
 class FermionComponent(EquationOfStateTerms):
@@ -227,7 +250,7 @@ class FermionComponent(EquationOfStateTerms):
         f['n'] *= (1.0 / Volume)
         f['p'] *= (Energy / Volume)
         f['u'] *= (Energy / Volume)
-        f['s'] *= (BOLTZMANN_CONSTANT / Volume)
+        f['s']  = (f['u'] + f['p']) / self.T - f['n'] * eta
 
         for k in "npus":
             self._terms[k] = f[k]
