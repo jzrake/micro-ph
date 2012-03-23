@@ -41,19 +41,16 @@ import numpy as np
 import timmes.fdfunc
 import fdfunc
 
-# don't worry about overflows in exp
-# np.seterr(over='ignore')
 
-__all__ = ["solve_eta_pairs",
-           "fermion_everything"]
 
-FnBackend = "timmes"
+_FnBackend = "timmes"
 
 def Fn(n, eta, beta):
-    if FnBackend == "timmes":
+    if _FnBackend == "timmes":
         return timmes.fdfunc.dfermi(n, eta, beta)[0]
-    elif FnBackend == "scipy":
+    elif _FnBackend == "scipy":
         return fdfunc.dfermi(n, eta, beta)
+
 
 
 def Fn_all(n, eta, beta):
@@ -73,6 +70,7 @@ def Fn_all(n, eta, beta):
 
     """
     return timmes.fdfunc.dfermi(n, eta, beta)
+
 
 
 def fermion_everything(sgn, eta, beta):
@@ -224,6 +222,7 @@ def electron_everything(sgn, eta, beta):
     res['dudbeta'] = (1./2.) * t15 * (x + y)
 
     return res
+
 
 
 def solve_eta_pairs(beta, C):
