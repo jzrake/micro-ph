@@ -133,24 +133,24 @@ def ShenPressure():
         fig.suptitle(title, fontsize=14)
         fig.axes[0].get_xaxis().set_major_formatter(majorFormatter)
         fig.axes[0].get_yaxis().set_major_formatter(majorFormatter)
-        plt.xlabel(r"$\log_{10} \rho \ \rm{g/cm^3}$", fontsize=16)
-        plt.ylabel(r"$\log_{10} T \ \rm{MeV}$", fontsize=16)
+        plt.xlabel(r"$\rho \ \rm{g/cm^3}$", fontsize=16)
+        plt.ylabel(r"$T \ \rm{MeV}$", fontsize=16)
 
     tex = r"$(p - n_B^2 \frac{\partial F}{\partial n_B})/p$"
 
     dFdnB = shen.derivative2(table['F'], table['nB'], 0)
     p = dFdnB * table['nB']**2
-    do_image(np.log10(abs(1.0 - p/table['p'])), title=r"2-point derivative " + tex)
+    do_image(np.log10(abs(1.0 - p/table['p'])), title=r"2-point stencil " + tex)
 
     dFdnB = shen.derivative5(table['F'], table['nB'], 0)
     p = dFdnB * table['nB']**2
-    do_image(np.log10(abs(1.0 - p/table['p'])), title=r"5-point derivative " + tex)
+    do_image(np.log10(abs(1.0 - p/table['p'])), title=r"5-point stencil " + tex)
 
     plt.show()
 
 
-#ShenPressure()
-ShenConsistency()
+ShenPressure()
+#ShenConsistency()
 
 
 #eos = EquationOfStateEvaluator([FermiDiracElectrons, FermiDiracPositrons])

@@ -138,7 +138,7 @@ def neutrino_everything(sgn, eta):
 
     Parameters:
     --------------------------------------------------------
-
+    sgn  : +/-     ... +1 for particle, -1 for anti-particle
     eta  : mu/kT   ... chemical potential
 
 
@@ -163,14 +163,14 @@ def neutrino_everything(sgn, eta):
     if sgn < 0:
         eta = -eta
 
-    F4 = Fn_all(4.0, eta, 0.0)[0]
-    F6 = Fn_all(6.0, eta, 0.0)[0]
+    F2 = Fn_all(2.0, eta, 0.0)[0]
+    F3 = Fn_all(3.0, eta, 0.0)[0]
 
     res = { }
 
-    res['n'] = F4
-    res['p'] = F6 / 3.0
-    res['u'] = F6
+    res['n'] = F2
+    res['p'] = F3 / 3.0
+    res['u'] = F3
     res['eta'] = eta
 
     return res
