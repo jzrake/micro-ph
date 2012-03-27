@@ -5,44 +5,28 @@ from matplotlib import pyplot as plt
 import numpy as np
 
 
-def pressure(D, T, Y, verbose=False):
+class NeutrinoEos(EquationOfStateEvaluator):
 
-    electron = FermiDiracElectrons(D, T, Y)
-    positron = FermiDiracPositrons(D, T, Y)
-    nucleons = NucleonsShenEos3(D, T, Y)
+    def _build_terms(self, D, T, Y):
+        electron = FermiDiracElectrons(D, T, Y)
+        positron = FermiDiracPositrons(D, T, Y)
+        nucleons = NucleonsShenEos3(D, T, Y)
 
-    mu_n = nucleons.chemical_potential('neutrons')
-    mu_p = nucleons.chemical_potential('protons')
-    mu_e = electron.chemical_potential()
-    mu_t = positron.chemical_potential()
+        mu_n = nucleons.chemical_potential('neutrons')
+        mu_p = nucleons.chemical_potential('protons')
+        mu_e = electron.chemical_potential()
+        mu_t = positron.chemical_potential()
 
-    if verbose:
-        print "chemical potentials:"
-        print "e-:", mu_e
-        print "e+:", mu_t
-        print "p :", mu_p
-        print "n :", mu_n
+        mu_nu_p = mu_e + mu_p - mu_n
+        mu_nu_n = mu_t + mu_n - mu_p
 
-    mu_nu_p = mu_e + mu_p - mu_n
-    mu_nu_n = mu_t + mu_n - mu_p
+        neutrino = NeutrinoComponent(+1, mu_nu_p, T)
+        aeutrino = NeutrinoComponent(-1, mu_nu_n, T)
 
-    if verbose:
-        print "nu+:", mu_nu_p
-        print "nu-:", mu_nu_n
+        return [electron, positron, nucleons, neutrino, aeutrino]
 
-    neutrino = NeutrinoComponent(+1, mu_nu_p, T)
-    aeutrino = NeutrinoComponent(-1, mu_nu_n, T)
-
-    if verbose:
-        print "pressures:"
-        print "e- :", electron.pressure()
-        print "e+ :", positron.pressure()
-        print "p+n:", nucleons.pressure()
-        print "nu+:", neutrino.pressure()
-        print "nu-:", aeutrino.pressure()
-
-    p = [c.pressure() for c in electron, positron, nucleons, neutrino, aeutrino]
-    return p
+    def __call__(self, D, T, Y):
+        return self._build_terms(D, T, Y)
 
 
 D = 1e13
@@ -51,7 +35,8 @@ Ye = 0.08
 temp = np.logspace(np.log10(T0), np.log10(T1), 140)
 
 
-result = [pressure(D, T, Ye, verbose=True) for T in temp]
+eos = NeutrinoEos()
+result = [[t.pressure() for t in eos(D, T, Ye)] for T in temp]
 
 tex = [r"$e_-$", r"$e_+$", r"$n$ (shen)", r"$\nu_e$", r"$\bar{\nu}_e$"]
 ls = ['-.', '-.', '-', ':', '--']

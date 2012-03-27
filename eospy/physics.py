@@ -110,13 +110,16 @@ class EquationOfStateEvaluator(object):
     def specific_entropy(self, D, T, Y, derivative=None):
         return self._sample('specific_entropy', derivative, D, T, Y)
 
+    def _build_terms(self, D, T, Y):
+        return [t(*args) for t in self._Terms]
+
     def _sample(self, component, derivative, *args):
         """
         Private function, general handler for samples of the EOS components and
         their derivatives.
         """
         if not derivative:
-            return sum([getattr(t(*args), component)() for t in self._Terms])
+            return sum([getattr(t, component)() for t in self._build_terms(*args)])
 
         elif len(derivative) == 1:
             f = getattr(self, component)
