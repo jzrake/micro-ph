@@ -29,27 +29,29 @@ class NeutrinoEos(EquationOfStateEvaluator):
         return self._build_terms(D, T, Y)
 
 
-D = 1e13
-T0, T1 = 0.1, 200.0
-Ye = 0.08
-temp = np.logspace(np.log10(T0), np.log10(T1), 140)
 
 
-eos = NeutrinoEos()
-result = [[t.pressure() for t in eos(D, T, Ye)] for T in temp]
-
-tex = [r"$e_-$", r"$e_+$", r"$n$ (shen)", r"$\nu_e$", r"$\bar{\nu}_e$"]
-ls = ['-.', '-.', '-', ':', '--']
-
-for i in range(5):
-    plt.loglog(temp, [r[i] for r in result], ls[i], lw=2.0, label=tex[i])
+def Pressure():
+    D = 1e13
+    T0, T1 = 0.1, 200.0
+    Ye = 0.08
+    temp = np.logspace(np.log10(T0), np.log10(T1), 140)
 
 
-plt.title(r"Various EOS components for $\rho=10^{13} \ \rm{g/cm^3}$")
-plt.ylim(1e-12, 10000.0)
-plt.xlabel(r"$k_B T \ \rm{MeV}$", fontsize=16)
-plt.ylabel(r"$p(\rho,T) \ \rm{MeV/fm^3}$", fontsize=16)
-plt.legend(loc='lower right')
-plt.show()
+    eos = NeutrinoEos()
+    result = [[t.pressure() for t in eos(D, T, Ye)] for T in temp]
 
+    tex = [r"$e_-$", r"$e_+$", r"$n$ (shen)", r"$\nu_e$", r"$\bar{\nu}_e$"]
+    ls = ['-.', '-.', '-', ':', '--']
+
+    for i in range(5):
+        plt.loglog(temp, [r[i] for r in result], ls[i], lw=2.0, label=tex[i])
+
+
+    plt.title(r"Various EOS components for $\rho=10^{13} \ \rm{g/cm^3}$")
+    plt.ylim(1e-12, 10000.0)
+    plt.xlabel(r"$k_B T \ \rm{MeV}$", fontsize=16)
+    plt.ylabel(r"$p(\rho,T) \ \rm{MeV/fm^3}$", fontsize=16)
+    plt.legend(loc='lower right')
+    plt.show()
 

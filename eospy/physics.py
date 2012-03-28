@@ -110,7 +110,56 @@ class EquationOfStateEvaluator(object):
     def specific_entropy(self, D, T, Y, derivative=None):
         return self._sample('specific_entropy', derivative, D, T, Y)
 
-    def _build_terms(self, D, T, Y):
+    def gamma_effective(self, D, T, Y, method=2):
+
+        if method == 1:
+            p = self.pressure(D,T,Y)
+            s = self.entropy(D,T,Y)
+            dpdD = self.pressure(D, T, Y, derivative='D')
+            dpdT = self.pressure(D, T, Y, derivative='T')
+            dsdD = self.entropy(D, T, Y, derivative='D')
+            dsdT = self.entropy(D, T, Y, derivative='T')
+            return -(D/p)*(dpdD*dsdT - dpdT*dsdD) / dsdT
+
+        elif method == 2:
+            p = self.pressure(D,T,Y)
+
+            dpdD = self.pressure(D, T, Y, derivative='D')
+            dpdT = self.pressure(D, T, Y, derivative='T')
+            dudD = self.internal_energy(D, T, Y, derivative='D')
+            dudT = self.internal_energy(D, T, Y, derivative='T')
+
+            dpdD_e = (dpdD*dudT - dpdT*dudD) / dudT
+
+            #return (p/D)*(dpdD_e + p/D**2 * dpdT/dudT)
+            return (D/p)*(dpdD_e + p/D * dpdT/dudT)
+
+        elif method == 3:
+            p = self.pressure(D,T,Y)
+            dpdD = self.pressure(D, T, Y, derivative='D')
+            dpdT = self.pressure(D, T, Y, derivative='T')
+            dudD = self.specific_internal_energy(D, T, Y, derivative='D')
+            dudT = self.specific_internal_energy(D, T, Y, derivative='T')
+
+            return (D/p) * (dpdD*dudT + T/D**2 * dpdT**2) / dudT
+
+        elif method == 4: # Sekiguchi 4.10
+            p = self.pressure(D,T,Y)
+            dpdD = self.pressure(D, T, Y, derivative='D')
+            dpdT = self.pressure(D, T, Y, derivative='T')
+            dudD = self.internal_energy(D, T, Y, derivative='D')
+            dudT = self.internal_energy(D, T, Y, derivative='T')
+
+            dpdD_e = (dpdD*dudT - dpdT*dudD) / dudT
+            print (D/p)*dpdD_e, dpdT/dudT
+            return (D/p)*dpdD_e + dpdT/dudT
+
+
+    def _build_terms(self, *args):
+        """
+        This method should be over-ridden for building a composite EOS whose
+        terms are order-dependent, or are not instantiated with D, T, and Y.
+        """
         return [t(*args) for t in self._Terms]
 
     def _sample(self, component, derivative, *args):
@@ -147,6 +196,27 @@ class EquationOfStateEvaluator(object):
 
         else:
             raise ValueError("Derivative string must be 0, 1, or 2 characters")
+
+
+
+class IdealAdiabatic(EquationOfStateTerms):
+
+    def __init__(self, D, T, Y, gamma=1.4):
+        self.D = D
+        self.T = T
+        self.gamma = gamma
+        self._terms = { }
+        self._set_terms()
+
+    def _set_terms(self):
+        c2 = LIGHT_SPEED*LIGHT_SPEED
+        D = self.D * c2 * FM3_TO_CM3 / MEV_TO_ERG
+        f = self._terms
+
+        f['n'] =  D / PROTON_MASS
+        f['p'] = f['n'] * self.T
+        f['u'] = f['n'] * self.T / (self.gamma - 1.0)
+        f['s'] =(f['u'] + f['p']) / self.T # nonsense
 
 
 
