@@ -111,7 +111,10 @@ class EquationOfStateEvaluator(object):
         return self._sample('specific_entropy', derivative, D, T, Y)
 
     def gamma_effective(self, D, T, Y, method=2):
-
+        """
+        Computes the effective Gamma := (dlogp/dlogD)|_s to be used in the sound
+        speed: c_s^2 = (\Gamma*p) / (D*h) using one of three different methods.
+        """
         if method == 1:
             p = self.pressure(D,T,Y)
             s = self.entropy(D,T,Y)
@@ -123,14 +126,11 @@ class EquationOfStateEvaluator(object):
 
         elif method == 2:
             p = self.pressure(D,T,Y)
-
             dpdD = self.pressure(D, T, Y, derivative='D')
             dpdT = self.pressure(D, T, Y, derivative='T')
             dedD = self.specific_internal_energy(D, T, Y, derivative='D')
             dedT = self.specific_internal_energy(D, T, Y, derivative='T')
-
             dpdD_e = (dpdD*dedT - dpdT*dedD) / dedT
-
             return (D/p)*(dpdD_e + p/D**2 * dpdT/dedT)
 
         elif method == 3:
