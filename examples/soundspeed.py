@@ -14,14 +14,15 @@ def TestGamma():
 
 
     eos = EquationOfStateEvaluator([IdealAdiabatic])
-    #gamma1 = [eos.gamma_effective(D,T,Ye,method=1) for T in temp]
+    gamma1 = [eos.gamma_effective(D,T,Ye,method=1) for T in temp]
     gamma2 = [eos.gamma_effective(D,T,Ye,method=2) for T in temp]
     gamma3 = [eos.gamma_effective(D,T,Ye,method=3) for T in temp]
 
-    #plt.semilogx(temp, gamma1, lw=1.5, label='method 1')
+    plt.semilogx(temp, gamma1, lw=1.5, label='method 1')
     plt.semilogx(temp, gamma2, lw=1.5, label='method 2')
     plt.semilogx(temp, gamma3, lw=1.5, label='method 3')
 
+    print '1', gamma1
     print '2', gamma2
     print '3', gamma3
 

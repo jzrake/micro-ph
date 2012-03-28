@@ -119,7 +119,7 @@ class EquationOfStateEvaluator(object):
             dpdT = self.pressure(D, T, Y, derivative='T')
             dsdD = self.entropy(D, T, Y, derivative='D')
             dsdT = self.entropy(D, T, Y, derivative='T')
-            return -(D/p)*(dpdD*dsdT - dpdT*dsdD) / dsdT
+            return (D/p)*(dpdD*dsdT - dpdT*dsdD) / dsdT
 
         elif method == 2:
             p = self.pressure(D,T,Y)
@@ -204,7 +204,7 @@ class IdealAdiabatic(EquationOfStateTerms):
         f['n'] =  D / PROTON_MASS
         f['p'] = f['n'] * self.T
         f['u'] = f['n'] * self.T / (self.gamma - 1.0)
-        f['s'] =(f['u'] + f['p']) / self.T # nonsense
+        f['s'] = np.log(f['p']/D**self.gamma) / (self.gamma - 1)
 
 
 

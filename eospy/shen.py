@@ -131,7 +131,7 @@ def write_hdf5(table, fname, cols="all"):
 
 
 def read_hdf5(fname, cols="all"):
-    print "reading Shen table from", fname
+    # print "reading Shen table from", fname
 
     h5f = h5py.File(fname, "r")
     table = { }
@@ -257,6 +257,15 @@ if __name__ == "__main__":
             # self.assertAlmostEqual((T/p) * (p1-p0) / (T1-T0), (T/p)*dpdT[15,15,15], places=2)
             print (T/p) * (p1-p0) / (T1-T0), (T/p)*dpdT2[15,15,15], (T/p)*dpdT5[15,15,15]
 
+        def test_free_energy(self):
+            """
+            Verifies equation (82) in the Shen user guide.
+            """
+            t = read_hdf5("data/eos3.h5", cols=['p', 'F', 'nB', 'un', 'up', 'Yp'])
+            C = (t['un']*(1-t['Yp']) + t['up']*t['Yp'] - t['p']/t['nB']) - t['F']
+            print "number of times F-consistency violated by more than 1%:",\
+                len(t['F'][np.where(abs(C/t['F']) > 1e-2)])
+
         def test_pressure(self):
             """
             Uses the 5-point derivative to check the definition of the pressure
@@ -277,7 +286,7 @@ if __name__ == "__main__":
             table = read_hdf5("data/eos3.h5", cols=['p', 'Eint', 'logT', 'nB'])
             dEdnB = derivative5(table['Eint'], table['nB'], 0)
             dpdlogT = derivative5(table['p'], table['logT'], 1)
-            print "consistency:", (table['p'] - dEdnB * table['nB']**2 - dpdlogT)[10,10,10]
+            print "p consistency:", (table['p'] - dEdnB * table['nB']**2 - dpdlogT)[10,10,10]
 
     unittest.main()
 
