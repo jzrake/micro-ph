@@ -126,33 +126,21 @@ class EquationOfStateEvaluator(object):
 
             dpdD = self.pressure(D, T, Y, derivative='D')
             dpdT = self.pressure(D, T, Y, derivative='T')
-            dudD = self.internal_energy(D, T, Y, derivative='D')
-            dudT = self.internal_energy(D, T, Y, derivative='T')
+            dedD = self.specific_internal_energy(D, T, Y, derivative='D')
+            dedT = self.specific_internal_energy(D, T, Y, derivative='T')
 
-            dpdD_e = (dpdD*dudT - dpdT*dudD) / dudT
+            dpdD_e = (dpdD*dedT - dpdT*dedD) / dedT
 
-            #return (p/D)*(dpdD_e + p/D**2 * dpdT/dudT)
-            return (D/p)*(dpdD_e + p/D * dpdT/dudT)
+            return (D/p)*(dpdD_e + p/D**2 * dpdT/dedT)
 
         elif method == 3:
             p = self.pressure(D,T,Y)
             dpdD = self.pressure(D, T, Y, derivative='D')
             dpdT = self.pressure(D, T, Y, derivative='T')
-            dudD = self.specific_internal_energy(D, T, Y, derivative='D')
-            dudT = self.specific_internal_energy(D, T, Y, derivative='T')
+            dedD = self.specific_internal_energy(D, T, Y, derivative='D')
+            dedT = self.specific_internal_energy(D, T, Y, derivative='T')
 
-            return (D/p) * (dpdD*dudT + T/D**2 * dpdT**2) / dudT
-
-        elif method == 4: # Sekiguchi 4.10
-            p = self.pressure(D,T,Y)
-            dpdD = self.pressure(D, T, Y, derivative='D')
-            dpdT = self.pressure(D, T, Y, derivative='T')
-            dudD = self.internal_energy(D, T, Y, derivative='D')
-            dudT = self.internal_energy(D, T, Y, derivative='T')
-
-            dpdD_e = (dpdD*dudT - dpdT*dudD) / dudT
-            print (D/p)*dpdD_e, dpdT/dudT
-            return (D/p)*dpdD_e + dpdT/dudT
+            return (D/p) * (dpdD*dedT + T/D**2 * dpdT**2) / dedT
 
 
     def _build_terms(self, *args):
