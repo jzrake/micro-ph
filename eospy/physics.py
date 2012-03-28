@@ -51,13 +51,6 @@ class EquationOfStateTerms(object):
     def entropy(self):
         return self._terms['s']
 
-    def specific_entropy(self):
-        """
-        Answer is in (MeV/fm^3)/Kelvin per gram/cm^3.
-        """
-        c2 = LIGHT_SPEED*LIGHT_SPEED
-        return self._terms['s'] / (self.D * c2 * FM3_TO_CM3 / MEV_TO_ERG)
-
     def chemical_potential(self):
         return self._terms['eta'] * self.T
 
@@ -106,9 +99,6 @@ class EquationOfStateEvaluator(object):
 
     def entropy(self, D, T, Y, derivative=None):
         return self._sample('entropy', derivative, D, T, Y)
-
-    def specific_entropy(self, D, T, Y, derivative=None):
-        return self._sample('specific_entropy', derivative, D, T, Y)
 
     def gamma_effective(self, D, T, Y, method=2):
         """
@@ -416,7 +406,7 @@ class NucleonsShenEos3(EquationOfStateTerms):
         t['n'] = shen.sample(e, 'nB'   , D, kT, Ye)
         t['p'] = shen.sample(e, 'p'    , D, kT, Ye)
         t['u'] = shen.sample(e, 'Eint' , D, kT, Ye) * t['n']
-        t['s'] = shen.sample(e, 'S'    , D, kT, Ye) * t['n']
+        t['s'] = shen.sample(e, 'S'    , D, kT, Ye) # entropy per baryon
         t['mu_n'] = shen.sample(e, 'un', D, kT, Ye) + 938.0
         t['mu_p'] = shen.sample(e, 'up', D, kT, Ye) + 938.0
 

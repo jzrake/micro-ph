@@ -30,4 +30,35 @@ def TestGamma():
     plt.show()
 
 
-TestGamma()
+
+def TestGamma2():
+    D = 1e13
+    T0, T1 = 0.2, 250.0
+    Ye = 0.08
+    temp = np.logspace(np.log10(T0), np.log10(T1), 4)
+
+
+    eos = EquationOfStateEvaluator([NucleonsShenEos3])
+    gamma1 = [eos.gamma_effective(D,T,Ye,method=1) for T in temp]
+    gamma2 = [eos.gamma_effective(D,T,Ye,method=2) for T in temp]
+    gamma3 = [eos.gamma_effective(D,T,Ye,method=3) for T in temp]
+
+
+    print '1', gamma1
+    print '2', gamma2
+    print '3', gamma3
+
+
+    plt.semilogx(temp, gamma1, '-o', lw=1.5, label='method 1')
+    plt.semilogx(temp, gamma2, '-s', lw=1.5, label='method 2')
+    plt.semilogx(temp, gamma3, '-x', lw=1.5, label='method 3')
+
+    plt.title(r"Error in $\Gamma$ for an adiabatic equation of state")
+
+    plt.xlabel(r"$k_B T \ \rm{MeV}$", fontsize=16)
+    plt.ylabel(r"$\Delta \Gamma_{\rm{eff}}$", fontsize=16)
+    plt.legend(loc='upper left')
+    plt.show()
+
+
+TestGamma2()
