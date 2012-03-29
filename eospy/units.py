@@ -20,7 +20,7 @@ class DimensionalQuantity(object):
         if type(U) in [tuple, list]:
             self.val = U[0] * self._units[U[1]]
         elif isinstance(U, DimensionalQuantity):
-            self.val = U.val
+            self.val = U.val # already in SI
         else: # assume float
             self.val = U # assume SI units
 
@@ -37,9 +37,6 @@ class DimensionalQuantity(object):
 
     def measured_in(self, unit):
         return type(self)(self.val, default_unit=unit)
-
-    def __call__(self, unit=None):
-        return self.convert_to(unit)
 
     def __str__(self):
         return "%4.3e [%s]" % (self.convert_to(), self._default_unit)
