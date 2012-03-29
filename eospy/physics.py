@@ -23,16 +23,8 @@ class EquationOfStateTerms(object):
     potential of some component of the gas.
 
     Each instantiation of classes inheriting from this represents one point in
-    the (D, T, Y) space of independent thermodynamic variables, density,
-    temperature, and proton fraction := Np/Nb.
+    the space of independent thermodynamic variables.
     """
-    def __init__(self, D, T, Y):
-        self.D = D
-        self.T = T
-        self.Y = Y
-        self._terms = { }
-        self._set_terms()
-
     def number_density(self):
         return self._terms['n']
 
@@ -140,7 +132,8 @@ class EquationOfStateEvaluator(object):
         This method should be over-ridden for building a composite EOS whose
         terms are order-dependent, or are not instantiated with D, T, and Y.
         """
-        return [t(*args) for t in self._Terms]
+        raise NotImplementedError("Derived class must implement this method.")
+
 
     def _sample(self, component, derivative, *args):
         """
@@ -180,13 +173,16 @@ class EquationOfStateEvaluator(object):
 
 
 class IdealAdiabatic(EquationOfStateTerms):
-
-    def __init__(self, D, T, Y, gamma=1.4):
+    """
+    Represents an adiabatic equation of state, with adiabatic constant 'gamma'.
+    """
+    def __init__(self, D, T, gamma=1.4):
         self.D = D
         self.T = T
         self.gamma = gamma
         self._terms = { }
         self._set_terms()
+
 
     def _set_terms(self):
         c2 = LIGHT_SPEED*LIGHT_SPEED
@@ -205,8 +201,17 @@ class BlackbodyPhotons(EquationOfStateTerms):
     Evaluates all terms for a photon gas. Only needs the temperature as a
     parameter.
     """
+    def __init__(self, T):
+        self.D = D
+        self.T = T
+        self.Y = Y
+        self._terms = { }
+        self._set_terms()
+
+
     def mass_density(self):
         return 0.0
+
 
     def _set_terms(self):
         """
@@ -228,14 +233,26 @@ class BlackbodyPhotons(EquationOfStateTerms):
 
 class NeutrinoComponent(EquationOfStateTerms):
     """
-    Represents an EOS component of neutrinos and anti-neutrinos.
+    Represents an EOS component of neutrinos and anti-neutrinos. Must be built
+    with the desired chemical potential, which would typically be recovered by
+    through coupling to a baryon component.
     """
     def __init__(self, sgn, mu, T):
+        """
+        
+        Parameters:
+        --------------------------------------------------------
+
+        sgn  : +/- for neutrino/anti-neutrino
+        mu   : chemical potential (MeV)
+        T    : temperature (MeV)
+        """
         self.sgn = sgn
         self.mu = mu
         self.T = T
         self._terms = { }
         self._set_terms()
+
 
     def _set_terms(self):
 
@@ -264,9 +281,18 @@ class FermionComponent(EquationOfStateTerms):
     ----------------------------------------------------------------------------
 
     Objects inheriting from this class are instantiated with the baryon mass
-    density and proton fraction as 'D'. However, the mass_density method returns
-    the mass density of fermions.
+    density 'D' and proton fraction as 'Y'. However, the mass_density method
+    returns the mass density of fermions.
     """
+
+    def __init__(self, D, T, Y):
+        self.D = D
+        self.T = T
+        self.Y = Y
+        self._terms = { }
+        self._set_terms()
+
+
     def mass_density(self):
         """
         Returns the mass density of electrons in g/cm^3.
@@ -388,6 +414,13 @@ class NucleonsShenEos3(EquationOfStateTerms):
     """
 
     _table = None # caches the hdf5 table once it is loaded
+
+    def __init__(self, D, T, Y):
+        self.D = D
+        self.T = T
+        self.Y = Y
+        self._terms = { }
+        self._set_terms()
 
     def chemical_potential(self, type):
         if type == 'neutrons': return self._terms['mu_n']
