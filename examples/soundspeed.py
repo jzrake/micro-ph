@@ -61,4 +61,4 @@ def TestGamma2():
     plt.show()
 
 
-TestGamma2()
+TestGamma()

@@ -120,8 +120,7 @@ class EquationOfStateEvaluator(object):
             dpdT = self.pressure(D, T, Y, derivative='T')
             dedD = self.specific_internal_energy(D, T, Y, derivative='D')
             dedT = self.specific_internal_energy(D, T, Y, derivative='T')
-            dpdD_e = (dpdD*dedT - dpdT*dedD) / dedT
-            return (D/p)*(dpdD_e + p/D**2 * dpdT/dedT)
+            return (D/p)*(dpdD*dedT - dpdT*dedD + p/D**2 * dpdT)/dedT
 
         elif method == 3:
             p = self.pressure(D,T,Y)
@@ -131,6 +130,9 @@ class EquationOfStateEvaluator(object):
             dedT = self.specific_internal_energy(D, T, Y, derivative='T')
 
             return (D/p) * (dpdD*dedT + T/D**2 * dpdT**2) / dedT
+
+        else:
+            raise ValueError("Method must be either 1, 2, or 3")
 
 
     def _build_terms(self, *args):
