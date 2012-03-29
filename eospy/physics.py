@@ -202,16 +202,12 @@ class BlackbodyPhotons(EquationOfStateTerms):
     parameter.
     """
     def __init__(self, T):
-        self.D = D
         self.T = T
-        self.Y = Y
         self._terms = { }
         self._set_terms()
 
-
     def mass_density(self):
         return 0.0
-
 
     def _set_terms(self):
         """
@@ -237,29 +233,24 @@ class NeutrinoComponent(EquationOfStateTerms):
     with the desired chemical potential, which would typically be recovered by
     through coupling to a baryon component.
     """
-    def __init__(self, sgn, mu, T):
+    def __init__(self, mu, T):
         """
-        
         Parameters:
         --------------------------------------------------------
 
-        sgn  : +/- for neutrino/anti-neutrino
         mu   : chemical potential (MeV)
         T    : temperature (MeV)
         """
-        self.sgn = sgn
         self.mu = mu
         self.T = T
         self._terms = { }
         self._set_terms()
 
-
     def _set_terms(self):
-
         Volume = np.power(np.pi, 2) * np.power(HBAR_C/self.T, 3)
         Energy = self.T
 
-        f = fermion.neutrino_everything(self.sgn, self.mu/self.T)
+        f = fermion.neutrino_everything(self.mu/self.T)
 
         f['n'] *= (1.0 / Volume)
         f['p'] *= (Energy / Volume)
@@ -276,22 +267,22 @@ class NeutrinoComponent(EquationOfStateTerms):
 class FermionComponent(EquationOfStateTerms):
     """
     Represents an EOS component of electrons or positrons.
-
-    Notes:
-    ----------------------------------------------------------------------------
-
-    Objects inheriting from this class are instantiated with the baryon mass
-    density 'D' and proton fraction as 'Y'. However, the mass_density method
-    returns the mass density of fermions.
     """
+    Volume = np.power(np.pi, 2) * np.power(HBAR_C/ELECTRON_MASS, 3)
+    Energy = ELECTRON_MASS
 
-    def __init__(self, D, T, Y):
-        self.D = D
+    def __init__(self, mu, T):
+        """
+        Parameters:
+        --------------------------------------------------------
+
+        mu   : chemical potential, without rest-mass (MeV)
+        T    : temperature (MeV)
+        """
+        self.mu = mu
         self.T = T
-        self.Y = Y
         self._terms = { }
         self._set_terms()
-
 
     def mass_density(self):
         """
@@ -299,43 +290,24 @@ class FermionComponent(EquationOfStateTerms):
         """
         return self._terms['n'] * (ELECTRON_MASS/(LIGHT_SPEED*LIGHT_SPEED))
 
-
-    def _eval_pairs(self):
+    def _set_terms(self):
         """
-        Sets the number density, pressure, and internal (n,p,u) energy for both
-        electrons and positrons.
-        
-        Parameters (taken from self):
-        --------------------------------------------------------
-        
-        D    : density (g/cm^3)
-        T    : temperature (MeV)
-        Y    : proton/electron fraction
-        _sgn : +/- for electrons / positrons
-
+        Sets the number density, pressure, internal energy, and specific entropy
+        (n,p,u,s) for both electrons and positrons.
         """
-
-        c2 = LIGHT_SPEED*LIGHT_SPEED
-        Volume = np.power(np.pi, 2) * np.power(HBAR_C/ELECTRON_MASS, 3)
-        Energy = ELECTRON_MASS
-
-        Erest = self.D * c2 * FM3_TO_CM3 / MEV_TO_ERG
-        C = Volume * self.Y * Erest / ATOMIC_MASS_UNIT
-
+        eta = self.mu / self.T
         beta = self.T / ELECTRON_MASS
-        eta = fermion.solve_eta_pairs(beta, C)
+        f = fermion.fermion_everything(eta, beta)
 
-        f = fermion.fermion_everything(self._sgn, eta, beta)
-
-        f['n'] *= (1.0 / Volume)
-        f['p'] *= (Energy / Volume)
-        f['u'] *= (Energy / Volume)
+        f['n'] *= (1.0 / self.Volume)
+        f['p'] *= (self.Energy / self.Volume)
+        f['u'] *= (self.Energy / self.Volume)
         f['s']  = (f['u'] + f['p']) / self.T - f['n'] * eta
 
         for k in "npus":
             self._terms[k] = f[k]
 
-        self._terms['eta'] = f['eta']
+        self._terms['eta'] = eta
 
 
 
@@ -343,9 +315,16 @@ class FermiDiracElectrons(FermionComponent):
     """
     Evaluates the electron thermodynamics using exact Fermi-Dirac integrals.
     """
-    def _set_terms(self):
-        self._sgn = +1.0
-        self._eval_pairs()
+    def __init__(self, T, np):
+        """
+        Parameters:
+        --------------------------------------------------------
+        T    : temperature (MeV)
+        np   : the number density of positively charged baryons (1/fm^3)
+        """
+        nu = fermion.solve_eta_pairs(T / ELECTRON_MASS, self.Volume * np)
+        eta = +(nu - ELECTRON_MASS/T)
+        super(FermiDiracElectrons, self).__init__(eta*T, T)
 
 
 
@@ -353,9 +332,16 @@ class FermiDiracPositrons(FermionComponent):
     """
     Evaluates the positron thermodynamics using exact Fermi-Dirac integrals.
     """
-    def _set_terms(self):
-        self._sgn = -1.0
-        self._eval_pairs()
+    def __init__(self, T, np):
+        """
+        Parameters:
+        --------------------------------------------------------
+        T    : temperature (MeV)
+        np   : the number density of positively charged baryons (1/fm^3)
+        """
+        nu = fermion.solve_eta_pairs(self.T / ELECTRON_MASS, self.Volume * np)
+        eta = -(nu + ELECTRON_MASS/T)
+        super(FermiDiracPositrons, self).__init__(eta*T, T)
 
 
 
@@ -364,18 +350,23 @@ class ColdElectrons(FermionComponent):
     Evaluates the thermodynamic variables for a cold (fully degenerate) electron
     gas. Accurate as long as the Fermi momentum is not relativistic.
     """
+    def __init__(self, ne):
+        """
+        Parameters:
+        --------------------------------------------------------
+        ne   : the number density of electrons (1/fm^3)
+        """
+        self.ne = ne
+
     def _set_terms(self):
         """
         http://scienceworld.wolfram.com/physics/ElectronDegeneracyPressure.html
         """
-        Erest = self.D * LIGHT_SPEED*LIGHT_SPEED * FM3_TO_CM3 / MEV_TO_ERG
-        ne = self.Y * Erest / ATOMIC_MASS_UNIT
-
         num = np.power(np.pi, 2) * np.power(HBAR_C, 2)
         den = 5.0 * ELECTRON_MASS
-        las = np.power(3.0/np.pi, 2./3.) * np.power(ne, 5./3.)
+        las = np.power(3.0/np.pi, 2./3.) * np.power(self.ne, 5./3.)
 
-        self._terms['n'] = ne
+        self._terms['n'] = self.ne
         self._terms['p'] = (num/den) * las
         # 'u' not implemented yet
         # 's' not implemented yet
@@ -387,15 +378,20 @@ class DenseElectrons(FermionComponent):
     Evaluates the thermodynamic variables for a dense and fully degenerate
     electron gas, where the Fermi momentum is ultra-relativistic.
     """
+    def __init__(self, ne):
+        """
+        Parameters:
+        --------------------------------------------------------
+        ne   : the number density of electrons (1/fm^3)
+        """
+        self.ne = ne
+
     def _set_terms(self):
         """
         The Physical Universe: An Introduction to Astronomy, Frank H. Shu (1982)
         """
-        Erest = self.D * LIGHT_SPEED*LIGHT_SPEED * FM3_TO_CM3 / MEV_TO_ERG
-        ne = self.Y * Erest / ATOMIC_MASS_UNIT
-
-        self._terms['n'] = ne
-        self._terms['p'] = 0.123 * 2*np.pi * HBAR_C * np.power(ne, 4./3.)
+        self._terms['n'] = self.ne
+        self._terms['p'] = 0.123 * 2*np.pi * HBAR_C * np.power(self.ne, 4./3.)
         # 'u' not implemented yet
         # 's' not implemented yet
 
@@ -426,7 +422,6 @@ class NucleonsShenEos3(EquationOfStateTerms):
         if type == 'neutrons': return self._terms['mu_n']
         if type == 'protons' : return self._terms['mu_p']
         raise ValueError("'type' must be either 'neutrons' or 'protons'")
-
 
     def _set_terms(self):
         if type(self)._table is None:
