@@ -26,29 +26,25 @@ class EquationOfStateTerms(object):
     the space of independent thermodynamic variables.
     """
     def number_density(self):
-        return self._terms['n']
+        return self._terms['n'](unit) if unit else self._terms['n']
 
-    def pressure(self, unit):
-        return self._terms['p'].convert_to(unit)
+    def pressure(self, unit=None):
+        return self._terms['p'](unit) if unit else self._terms['p']
 
-    def internal_energy(self):
-        return self._terms['u']
+    def internal_energy(self, unit=None):
+        return self._terms['u'](unit) if unit else self._terms['u']
 
-    def specific_internal_energy(self):
+    def specific_internal_energy(self, unit):
         """
-        Answer is in MeV (per particle)
+        Answer is in energy (per particle)
         """
-        return self._terms['u'] / self._terms['n']
+        return self._terms['u'](unit) / self._terms['n'](unit)
 
-    def entropy(self):
-        return self._terms['s']
+    def entropy(self, unit):
+        return self._terms['s'](unit) if unit else self._terms['s']
 
     def chemical_potential(self):
         return self._terms['eta'] * self.T
-
-    def mass_density(self):
-        return self.D
-
 
 
 class EquationOfStateEvaluator(object):
@@ -187,13 +183,13 @@ class IdealAdiabatic(EquationOfStateTerms):
     def _set_terms(self):
         g1 = self.gamma - 1.0
         p = self.n * self.T
-        s = np.log(p/self.D**self.gamma) / g1
+        s = np.log(p/self.n**self.gamma) / g1
 
         f = self._terms
-        f['n'] = units.NumberDensity(self.n, '1/fm^3')
-        f['p'] = units.EnergyDensity(p, 'MeV/fm^3')
-        f['u'] = units.EnergyDensity(p / g1, 'MeV/fm^3')
-        f['s'] = units.Entropy(s, 'MeV/K')
+        f['n'] = units.NumberDensity([self.n, '1/fm^3'])
+        f['p'] = units.EnergyDensity([p, 'MeV/fm^3'])
+        f['u'] = units.EnergyDensity([p / g1, 'MeV/fm^3'])
+        f['s'] = units.Entropy([s, 'MeV/K'])
 
 
 
