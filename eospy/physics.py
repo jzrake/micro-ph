@@ -25,23 +25,20 @@ class EquationOfStateTerms(object):
     Each instantiation of classes inheriting from this represents one point in
     the space of independent thermodynamic variables.
     """
-    def number_density(self):
-        return self._terms['n'](unit) if unit else self._terms['n']
+    def number_density(self, unit=None):
+        return self._terms['n'].measured_in(unit)
 
     def pressure(self, unit=None):
-        return self._terms['p'](unit) if unit else self._terms['p']
+        return self._terms['p'].measured_in(unit)
 
     def internal_energy(self, unit=None):
-        return self._terms['u'](unit) if unit else self._terms['u']
-
-    def specific_internal_energy(self, unit):
-        return self._terms['u'](unit) / self._terms['n'](unit)
+        return self._terms['u'].measured_in(unit)
 
     def entropy(self, unit=None):
-        return self._terms['s'](unit) if unit else self._terms['s']
+        return self._terms['s'].measured_in(unit)
 
-    def chemical_potential(self):
-        return self._terms['eta'] * self.T
+    def specific_internal_energy(self):
+        return self._terms['u'].convert_to() / self._terms['n'].convert_to()
 
 
 class EquationOfStateEvaluator(object):

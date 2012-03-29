@@ -17,15 +17,13 @@ ERG  = 1e-7 # J
 class DimensionalQuantity(object):
     
     def __init__(self, U, default_unit=None):
-        if type(U) is float:
-            self.val = U # assume SI units
-        elif type(U) in [tuple, list]:
+        if type(U) in [tuple, list]:
             self.val = U[0] * self._units[U[1]]
         elif isinstance(U, DimensionalQuantity):
             self.val = U.val
-        else:
-            raise ValueError(
-                "expected float, list, tuple, or DimensionalQuantity")
+        else: # assume float
+            self.val = U # assume SI units
+
         if default_unit is not None:
             assert(default_unit in self._units)
             self._default_unit = default_unit
