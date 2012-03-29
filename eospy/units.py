@@ -2,6 +2,7 @@
 
 LIGHT_SPEED        = 2.997924580e+08 # m/s
 ATOMIC_MASS_UNIT   = 1.660538860e-27 # kg
+PROTON_MASS        = 1.672621580e-27 # kg
 KB                 = 1.380648813e-23 # J/K
 
 GRAM = 1e-03 # kg
@@ -16,12 +17,15 @@ ERG  = 1e-7 # J
 class DimensionalQuantity(object):
     
     def __init__(self, U):
-        if type(U) in [tuple, list]:
+        if type(U) is float:
+            self.val = U # assume SI units
+        elif type(U) in [tuple, list]:
             self.val = U[0] * self._units[U[1]]
         elif isinstance(U, DimensionalQuantity):
             self.val = U.val
         else:
-            raise ValueError("expected list, tuple, or DimensionalQuantity")
+            raise ValueError(
+                "expected float, list, tuple, or DimensionalQuantity")
 
     def convert_to(self, unit=None):
         if unit is None: unit = self.default_unit
@@ -32,6 +36,16 @@ class DimensionalQuantity(object):
 
     def __str__(self):
         return str(self.convert_to(self.default_unit)) + " " + self.default_unit
+
+
+
+class Mass(DimensionalQuantity):
+    default_unit = 'kg'
+    _units = {
+        'kg'  : 1.0, # SI are base units
+        'g'   : GRAM,
+        'MeV' : MEV / (LIGHT_SPEED * LIGHT_SPEED)
+        }
 
 
 class NumberDensity(DimensionalQuantity):
@@ -86,3 +100,10 @@ class Entropy(DimensionalQuantity):
         'eV/K'     : EV,
         'MeV/K'    : MEV }
 
+
+BoltzmannConstant = Entropy(KB)
+RoomTemperature = Temperature(293.0)
+AtmosphericPressure = EnergyDensity([1.0, 'atm'])
+AtmosphericNumberDensity = NumberDensity([0.02504e27, '1/m^3'])
+ProtonMass = Mass(PROTON_MASS)
+AtomicMassUnit = Mass(ATOMIC_MASS_UNIT)

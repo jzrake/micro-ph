@@ -40,7 +40,7 @@ class EquationOfStateTerms(object):
         """
         return self._terms['u'](unit) / self._terms['n'](unit)
 
-    def entropy(self, unit):
+    def entropy(self, unit=None):
         return self._terms['s'](unit) if unit else self._terms['s']
 
     def chemical_potential(self):
