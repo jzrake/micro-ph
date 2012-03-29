@@ -2,7 +2,7 @@
 import numpy as np
 import shen
 import fermion
-
+import units
 
 
 LIGHT_SPEED        = 2.997924580e+10 # cm/s
@@ -28,17 +28,17 @@ class EquationOfStateTerms(object):
     def number_density(self):
         return self._terms['n']
 
-    def pressure(self):
-        return self._terms['p']
+    def pressure(self, unit):
+        return self._terms['p'].convert_to(unit)
 
     def internal_energy(self):
         return self._terms['u']
 
     def specific_internal_energy(self):
         """
-        Answer is in MeV/fm^3 per gram/cm^3.
+        Answer is in MeV (per particle)
         """
-        return self._terms['u'] / self.D
+        return self._terms['u'] / self._terms['n']
 
     def entropy(self):
         return self._terms['s']
@@ -177,22 +177,23 @@ class IdealAdiabatic(EquationOfStateTerms):
     Represents an adiabatic equation of state, with adiabatic constant 'gamma'.
     """
     def __init__(self, D, T, gamma=1.4):
-        self.D = D
-        self.T = T
+        self.D = units.MassDensity(*D).convert_to('MeV/fm^3')
+        self.T = units.Temperature(*T).convert_to('MeV')
         self.gamma = gamma
         self._terms = { }
         self._set_terms()
 
 
     def _set_terms(self):
-        c2 = LIGHT_SPEED*LIGHT_SPEED
-        D = self.D * c2 * FM3_TO_CM3 / MEV_TO_ERG
         f = self._terms
+        g1 = self.gamma - 1.0
+        n = self.D / PROTON_MASS
+        p = n * self.T
 
-        f['n'] =  D / PROTON_MASS
-        f['p'] = f['n'] * self.T
-        f['u'] = f['n'] * self.T / (self.gamma - 1.0)
-        f['s'] = np.log(f['p']/D**self.gamma) / (self.gamma - 1)
+        f['n'] = units.NumberDensity(n, '1/fm^3')
+        f['p'] = units.EnergyDensity(p, 'MeV/fm^3')
+        f['u'] = units.EnergyDensity(p / g1, 'MeV/fm^3')
+        f['s'] = units.Entropy(np.log(p/self.D**self.gamma) / g1, 'J/K')
 
 
 
