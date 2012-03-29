@@ -25,20 +25,24 @@ class EquationOfStateTerms(object):
     Each instantiation of classes inheriting from this represents one point in
     the space of independent thermodynamic variables.
     """
-    def number_density(self, unit=None):
-        return self._terms['n'].measured_in(unit)
+    def number_density(self, units=None, asobj=True):
+        return self._gencall('n', units, asobj)
 
-    def pressure(self, unit=None):
-        return self._terms['p'].measured_in(unit)
+    def pressure(self, units=None, asobj=True):
+        return self._gencall('p', units, asobj)
 
-    def internal_energy(self, unit=None):
-        return self._terms['u'].measured_in(unit)
+    def internal_energy(self, units=None, asobj=True):
+        return self._gencall('u', units, asobj)
 
-    def entropy(self, unit=None):
-        return self._terms['s'].measured_in(unit)
+    def entropy(self, units=None, asobj=True):
+        return self._gencall('s', units, asobj)
 
     def specific_internal_energy(self):
         return self._terms['u'].convert_to() / self._terms['n'].convert_to()
+
+    def _gencall(self, key, units, asobj):
+        return (self._terms[key].measured_in(units) if asobj else
+                self._terms[key].convert_to(units))
 
 
 class EquationOfStateEvaluator(object):
@@ -48,10 +52,7 @@ class EquationOfStateEvaluator(object):
     EquationOfStateTerms, not an instance of a class. It knows how to create
     instances when it needs and query them for values or create derivatives.
     """
-    def __init__(self, Terms=[]):
-        self._num_deriv_dx = 1e-8
-        self._Terms = [ ]
-        for t in Terms: self.add_term(t)
+    _num_deriv_dx = 1e-8
 
     def set_numerical_derivative_step(self, dx):
         """
@@ -60,12 +61,6 @@ class EquationOfStateEvaluator(object):
         stepped.
         """
         self._num_deriv_step = dx
-
-    def add_term(self, term):
-        """
-        Add a term to the composite EOS.
-        """
-        self._Terms.append(term)
 
     def number_density(self, D, T, Y, derivative=None):
         return self._sample('number_density', derivative, D, T, Y)
@@ -117,7 +112,7 @@ class EquationOfStateEvaluator(object):
             raise ValueError("Method must be either 1, 2, or 3")
 
 
-    def _build_terms(self, *args):
+    def build_terms(self, *args):
         """
         This method should be over-ridden for building a composite EOS whose
         terms are order-dependent, or are not instantiated with D, T, and Y.
@@ -125,16 +120,17 @@ class EquationOfStateEvaluator(object):
         raise NotImplementedError("Derived class must implement this method.")
 
 
-    def _sample(self, component, derivative, *args):
+    def _sample(self, attr, derivative, *args):
         """
-        Private function, general handler for samples of the EOS components and
+        Private function, general handler for samples of the EOS attributes and
         their derivatives.
         """
         if not derivative:
-            return sum([getattr(t, component)() for t in self._build_terms(*args)])
+            return sum([getattr(term, attr)(asobj=False) for term in
+                        self.build_terms(*args)])
 
         elif len(derivative) == 1:
-            f = getattr(self, component)
+            f = lambda x: getattr(self, attr)(x, asobj=False)
             n = {'D': 0, 'T': 1, 'Y': 2}[derivative]
 
             dx = self._num_deriv_dx
@@ -149,8 +145,8 @@ class EquationOfStateEvaluator(object):
             """
             Evaluating second derivatives. Unfinished.
             """
-            raise NotImplementedError("Second derivative calculation unfinished.")
-            f = getattr(self, component)
+            raise NotImplementedError("Second derivative calculation not written.")
+            f = getattr(self, attr)
             n0 = {'D': 0, 'T': 1, 'Y': 2}[derivative[0]]
             n1 = {'D': 0, 'T': 1, 'Y': 2}[derivative[1]]
             
@@ -168,15 +164,14 @@ class IdealAdiabatic(EquationOfStateTerms):
     """
     def __init__(self, n, T, gamma=1.4):
         self.n = units.NumberDensity(n).convert_to('1/fm^3')
-        self.T = units.Temperature(T).convert_to('MeV')
+        self.kT = units.Temperature(T).convert_to('MeV')
         self.gamma = gamma
         self._terms = { }
         self._set_terms()
 
-
     def _set_terms(self):
         g1 = self.gamma - 1.0
-        p = self.n * self.T
+        p = self.n * self.kT
         s = np.log(p/self.n**self.gamma) / g1
 
         f = self._terms
@@ -193,7 +188,7 @@ class BlackbodyPhotons(EquationOfStateTerms):
     parameter.
     """
     def __init__(self, T):
-        self.T = T
+        self.kT = units.Temperature(T).convert_to('MeV')
         self._terms = { }
         self._set_terms()
 
@@ -205,16 +200,20 @@ class BlackbodyPhotons(EquationOfStateTerms):
         http://en.wikipedia.org/wiki/Photon_gas
         """
         z3 = 1.202056903159594285 # RiemannZeta(3), Mathematica
-        T3 = np.power(self.T, 3)
-        T4 = np.power(self.T, 4)
+        T3 = np.power(self.kT, 3)
+        T4 = np.power(self.kT, 4)
         a = pow(np.pi, 2) / (15*np.power(HBAR_C, 3))
 
-        t = self._terms
+        n = T3 * 2 * z3 / (np.power(np.pi, 2.0) * np.power(HBAR_C, 3.0))
+        p = T4 * a / 3.0
+        u = T4 * a
+        s = (4./3.) * (T4 * a) / (self.kT / BOLTZMANN_CONSTANT)
 
-        t['n'] = T3 * 2 * z3 / (np.power(np.pi, 2.0) * np.power(HBAR_C, 3.0))
-        t['p'] = T4 * a / 3.0
-        t['u'] = T4 * a
-        t['s'] = (4./3.) * (T4 * a) / (self.T / BOLTZMANN_CONSTANT)
+        f = self._terms
+        f['n'] = units.NumberDensity([n, '1/fm^3'])
+        f['p'] = units.EnergyDensity([p, 'MeV/fm^3'])
+        f['u'] = units.EnergyDensity([p / g1, 'MeV/fm^3'])
+        f['s'] = units.Entropy([s, 'MeV/K'])
 
 
 
