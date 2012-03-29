@@ -24,10 +24,6 @@ class MyEos(object):
 
     def _sample(self, A, key, derivative):
         """
-        In pseudo code, for example if key is 'pressure':
-
-        return sum([term.pressure(A) for term in terms])
-
         A is an array of arguments for the EOS, each of which must be a
         dimensional quantity. Return value is in physics base (SI) units.
         """
@@ -53,11 +49,14 @@ class MyEos(object):
             raise ValueError(
                 "Derivative string must be 0, 1, or 2 characters")
 
-
     def _call_sample(self, A, key, unitClass, derivative):
+        """ Output units are ignored if derivative is being used. """
         B = [U(a) for U,a in zip(self._input_units, A)]
-        return unitClass(self._sample(B, key, derivative),
-                         default_unit=self._output_units[unitClass])
+        if derivative:
+            return self._sample(B, key, derivative)
+        else:
+            return unitClass(self._sample(B, key, derivative),
+                             default_unit=self._output_units[unitClass])
 
     def pressure(self, n, T, derivative=None):
         return self._call_sample([n, T], 'pressure',
@@ -89,6 +88,3 @@ T = [293.0, 'K']
 
 print eos.pressure(n, T)
 print eos.pressure(n, T, derivative='T')
-
-#print eos.pressure(1e13, 40.0, 0.08)
-#print eos.
