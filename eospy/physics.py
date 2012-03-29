@@ -35,9 +35,6 @@ class EquationOfStateTerms(object):
         return self._terms['u'](unit) if unit else self._terms['u']
 
     def specific_internal_energy(self, unit):
-        """
-        Answer is in energy (per particle)
-        """
         return self._terms['u'](unit) / self._terms['n'](unit)
 
     def entropy(self, unit=None):

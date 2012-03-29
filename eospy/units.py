@@ -16,7 +16,7 @@ ERG  = 1e-7 # J
 
 class DimensionalQuantity(object):
     
-    def __init__(self, U):
+    def __init__(self, U, default_unit=None):
         if type(U) is float:
             self.val = U # assume SI units
         elif type(U) in [tuple, list]:
@@ -26,21 +26,30 @@ class DimensionalQuantity(object):
         else:
             raise ValueError(
                 "expected float, list, tuple, or DimensionalQuantity")
+        if default_unit is not None:
+            assert(default_unit in self._units)
+            self._default_unit = default_unit
 
     def convert_to(self, unit=None):
-        if unit is None: unit = self.default_unit
+        if unit is None: unit = self._default_unit
         return self.val / self._units[unit]
+
+    def scale(self, v):
+        return type(self)(self.val*v)
+
+    def measured_in(self, unit):
+        return type(self)(self.val, default_unit=unit)
 
     def __call__(self, unit=None):
         return self.convert_to(unit)
 
     def __str__(self):
-        return str(self.convert_to(self.default_unit)) + " " + self.default_unit
+        return "%4.3e [%s]" % (self.convert_to(), self._default_unit)
 
 
 
 class Mass(DimensionalQuantity):
-    default_unit = 'kg'
+    _default_unit = 'kg'
     _units = {
         'kg'  : 1.0, # SI are base units
         'g'   : GRAM,
@@ -50,7 +59,7 @@ class Mass(DimensionalQuantity):
 
 class NumberDensity(DimensionalQuantity):
 
-    default_unit = '1/m^3'
+    _default_unit = '1/m^3'
     _units = {
         '1/m^3'   : 1.0, # SI are base units
         '1/cm^3'  : 1.0 / CM3,
@@ -60,7 +69,7 @@ class NumberDensity(DimensionalQuantity):
 
 class MassDensity(DimensionalQuantity):
 
-    default_unit = 'kg/m^3'
+    _default_unit = 'kg/m^3'
     _units = {
         'kg/m^3'   : 1.0, # SI are base units
         'g/cm^3'   : GRAM / CM3,
@@ -68,10 +77,17 @@ class MassDensity(DimensionalQuantity):
         'MeV/fm^3' : (MEV / FM3) / (LIGHT_SPEED * LIGHT_SPEED),
         'g/fm^3'   : GRAM / FM3 }
 
+    def to_number_density(self, m):
+        """
+        Converts the mass density to a number density, given the particle mass.
+        """
+        n = self.val / Mass(m).convert_to('kg')
+        return NumberDensity(n)
+
 
 class EnergyDensity(DimensionalQuantity):
 
-    default_unit = 'J/m^3'
+    _default_unit = 'J/m^3'
     _units = {
         'J/m^3'     : 1.0, # SI are base units
         'Pa'        : 1.0, # Pascal, alias for 'J/m^3
@@ -83,7 +99,7 @@ class EnergyDensity(DimensionalQuantity):
 
 class Temperature(DimensionalQuantity):
 
-    default_unit = 'K'
+    _default_unit = 'K'
     _units = {
         'K'        : 1.0, # Kelvins are base units
         'J'        : 1.0 / KB, 
@@ -93,7 +109,7 @@ class Temperature(DimensionalQuantity):
 
 class Entropy(DimensionalQuantity):
 
-    default_unit = 'J/K'
+    _default_unit = 'J/K'
     _units = {
         'J/K'      : 1.0, # Joule/Kelvin is base units
         'erg/K'    : ERG,
