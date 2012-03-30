@@ -6,12 +6,8 @@ import units
 import quantities as pq
 
 
-LIGHT_SPEED        =  pq.c
 HBAR_C             = (pq.constants.hbar * pq.c).rescale('MeV*fm')
 ELECTRON_MASS      = (pq.constants.electron_mass * pq.c**2).rescale('MeV')
-PROTON_MASS        =  pq.constants.proton_mass
-ATOMIC_MASS_UNIT   =  pq.constants.amu
-
 
 
 class EquationOfStateTerms(object):
@@ -27,6 +23,18 @@ class EquationOfStateTerms(object):
 
     def number_density(self):
         return self._gencall('n')
+
+    def mass_density(self):
+        raise NotImplementedError("mass density not defined for this term")
+
+    def enthalpy(self):
+        """
+        Generates the enthalpy parameter rho*h, where h = 1 + e + p/rho.
+        """
+        D = self.mass_density()
+        u = self.internal_energy()
+        p = self.pressure()
+        return D + (u + p)/pq.c**2
 
     def pressure(self):
         return self._gencall('p')
@@ -75,7 +83,8 @@ class EquationOfStateEvaluator(object):
         'pressure': pq.pascal,
         'internal_energy': pq.J/pq.m**3,
         'specific_internal_energy': pq.J,
-        'entropy': pq.J/pq.K
+        'entropy': pq.J/pq.K,
+        'enthalpy': pq.kg/pq.m**3
         }
     _num_deriv_dx = 1e-8
 
@@ -107,6 +116,9 @@ class EquationOfStateEvaluator(object):
     def specific_internal_energy(self, *args):
         return self._call_attr(args, 'specific_internal_energy')
 
+    def enthalpy(self, *args):
+        return self._call_attr(args, 'enthalpy')
+
     def entropy(self, *args):
         return self._call_attr(args, 'entropy')
 
@@ -122,54 +134,66 @@ class EquationOfStateEvaluator(object):
         f = lambda x: self._call_attr(x, attr)
         return (f(X1) - f(X0)) / (X1[n] - X0[n])
 
-    """
-    The following three functions compute the effective Gamma :=
-    (dlogp/dlogD)|_s to be used in the sound speed: c_s^2 = (\Gamma*p) / (D*h)
-    using one of three different methods.
-    """
-    def gamma_effective1(self, *args):
-        n = args[self._vars['n']]
-        T = args[self._vars['T']]
-        p = self.pressure(*args)
-        s = self.entropy(*args)
-        dpdn = self.derivative('pressure', 'n', *args)
-        dpdT = self.derivative('pressure', 'T', *args)
-        dsdn = self.derivative('entropy', 'n', *args)
-        dsdT = self.derivative('entropy', 'T', *args)
-        return (n/p)*(dpdn*dsdT - dpdT*dsdn) / dsdT
+    def gamma_effective(self, *args, **kwargs):
+        """
+        Compute the effective Gamma := (dlogp/dlogD)|_s to be used in the sound
+        speed: c_s^2 = (\Gamma*p) / (rho*h) using one of three different
+        methods.
+        """
+        method = kwargs.get('method', 2)
 
-    def gamma_effective2(self, *args):
-        n = args[self._vars['n']]
-        T = args[self._vars['T']]
-        p = self.pressure(*args)
-        dpdn = self.derivative('pressure', 'n', *args)
-        dpdT = self.derivative('pressure', 'T', *args)
-        dedn = self.derivative('specific_internal_energy', 'n', *args)
-        dedT = self.derivative('specific_internal_energy', 'T', *args)
-        return (n/p)*(dpdn*dedT - dpdT*dedn + p/n**2 * dpdT)/dedT
+        if method == 1:
+            n = args[self._vars['n']]
+            T = args[self._vars['T']]
+            p = self.pressure(*args)
+            s = self.entropy(*args)
+            dpdn = self.derivative('pressure', 'n', *args)
+            dpdT = self.derivative('pressure', 'T', *args)
+            dsdn = self.derivative('entropy', 'n', *args)
+            dsdT = self.derivative('entropy', 'T', *args)
+            return (n/p)*(dpdn*dsdT - dpdT*dsdn) / dsdT
+        elif method == 2:
+            n = args[self._vars['n']]
+            T = args[self._vars['T']]
+            p = self.pressure(*args)
+            dpdn = self.derivative('pressure', 'n', *args)
+            dpdT = self.derivative('pressure', 'T', *args)
+            dedn = self.derivative('specific_internal_energy', 'n', *args)
+            dedT = self.derivative('specific_internal_energy', 'T', *args)
+            return (n/p)*(dpdn*dedT - dpdT*dedn + p/n**2 * dpdT)/dedT
+        elif method == 3:
+            n = args[self._vars['n']]
+            T = args[self._vars['T']]
+            p = self.pressure(*args)
+            dpdn = self.derivative('pressure', 'n', *args)
+            dpdT = self.derivative('pressure', 'T', *args)
+            dedn = self.derivative('specific_internal_energy', 'n', *args)
+            dedT = self.derivative('specific_internal_energy', 'T', *args)
+            return (n/p) * (dpdn*dedT + T/n**2 * dpdT**2) / dedT
+        else:
+            raise ValueError("method must be 1,2, or 3")
 
-    def gamma_effective3(self, *args):
-        n = args[self._vars['n']]
-        T = args[self._vars['T']]
+    def sound_speed(self, *args, **kwargs):
         p = self.pressure(*args)
-        dpdn = self.derivative('pressure', 'n', *args)
-        dpdT = self.derivative('pressure', 'T', *args)
-        dedn = self.derivative('specific_internal_energy', 'n', *args)
-        dedT = self.derivative('specific_internal_energy', 'T', *args)
-        return (n/p) * (dpdn*dedT + T/n**2 * dpdT**2) / dedT
-
+        rhoh = self.enthalpy(*args)
+        gam = self.gamma_effective(*args, **kwargs)
+        return np.sqrt(gam * p / rhoh).rescale('m/s')
 
 
 class IdealAdiabatic(EquationOfStateTerms):
     """
     Represents an adiabatic equation of state, with adiabatic constant 'gamma'.
     """
-    def __init__(self, n, T, gamma=1.4):
+    def __init__(self, n, T, gamma=1.4, particle_mass=pq.constants.proton_mass):
         self.n = n
         self.T = self.temperature_in_Kelvin(T)
         self.gamma = gamma
+        self.particle_mass = particle_mass
         self._terms = { }
         self._set_terms()
+
+    def mass_density(self):
+        return self._terms['n'] * self.particle_mass
 
     def _set_terms(self):
         g1 = self.gamma - 1.0

@@ -11,7 +11,9 @@ import math
 class EquationOfStateBuilder(object):
 
     def build_terms(self, args):
-        return [IdealAdiabatic(*args)]
+        gas = IdealAdiabatic(*args)
+        gas.particle_mass = 28*pq.constants.proton_mass
+        return [gas]
 
     def get_vars(self):
         return { 'n': 0, 'T': 1 }
@@ -30,10 +32,11 @@ print gas.pressure(n, T).rescale('atm')
 print gas.entropy(n, T).rescale('MeV/K')
 
 print gas.derivative('entropy', 'n', n, T).rescale('(MeV/K)/(1/cm^3)')
-print gas.gamma_effective1(n, T)
-print gas.gamma_effective2(n, T)
-print gas.gamma_effective3(n, T)
+print gas.gamma_effective(n, T, method=1)
+print gas.gamma_effective(n, T, method=2)
+print gas.gamma_effective(n, T, method=3)
 
+print "sound speed:", gas.sound_speed(n, T)
 
 photon_gas = BlackbodyPhotons(40.0 * pq.MeV)
 print photon_gas.pressure()
