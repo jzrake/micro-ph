@@ -6,14 +6,11 @@ import units
 import quantities as pq
 
 
-LIGHT_SPEED        = 2.997924580e+10 # cm/s
+LIGHT_SPEED        =  pq.c
 HBAR_C             = (pq.constants.hbar * pq.c).rescale('MeV*fm')
-ELECTRON_MASS      = 5.110998928e-01 # MeV
-ATOMIC_MASS_UNIT   = 9.314940612e+02 # MeV
-PROTON_MASS        = 9.382720462e+02 # MeV
-MEV_TO_ERG         = 1.602176487e-06
-FM3_TO_CM3         = 1.000000000e-39
-BOLTZMANN_CONSTANT = 8.617332400e-11 # MeV/K
+ELECTRON_MASS      = (pq.constants.electron_mass * pq.c**2).rescale('MeV')
+PROTON_MASS        =  pq.constants.proton_mass
+ATOMIC_MASS_UNIT   =  pq.constants.amu
 
 
 
@@ -234,20 +231,26 @@ class NeutrinoComponent(EquationOfStateTerms):
         T    : temperature (MeV)
         """
         self.mu = mu
-        self.T = T
+        self.kT = self.temperature_in_MeV(T)
         self._terms = { }
         self._set_terms()
 
-    def _set_terms(self):
-        Volume = np.power(np.pi, 2) * np.power(HBAR_C/self.T, 3)
-        Energy = self.T
+    def mass_density(self):
+        """
+        Neutrinos are massless.
+        """
+        return 0.0
 
-        f = fermion.neutrino_everything(self.mu/self.T)
+    def _set_terms(self):
+        Volume = np.power(np.pi, 2) * np.power(HBAR_C/self.kT, 3)
+        Energy = self.kT
+
+        f = fermion.neutrino_everything(self.mu/self.kT)
 
         f['n'] *= (1.0 / Volume)
         f['p'] *= (Energy / Volume)
         f['u'] *= (Energy / Volume)
-        f['s']  = (f['u'] + f['p']) / self.T - f['n'] * f['eta']
+        f['s']  = (f['u'] + f['p']) / self.kT - f['n'] * f['eta']
 
         for k in "npus":
             self._terms[k] = f[k]
@@ -272,29 +275,29 @@ class FermionComponent(EquationOfStateTerms):
         T    : temperature (MeV)
         """
         self.mu = mu
-        self.T = T
+        self.kT = self.temperature_in_MeV(T)
         self._terms = { }
         self._set_terms()
 
     def mass_density(self):
         """
-        Returns the mass density of electrons in g/cm^3.
+        Returns the mass density of electrons.
         """
-        return self._terms['n'] * (ELECTRON_MASS/(LIGHT_SPEED*LIGHT_SPEED))
+        return self._terms['n'] * pq.constants.electron_mass
 
     def _set_terms(self):
         """
         Sets the number density, pressure, internal energy, and specific entropy
         (n,p,u,s) for both electrons and positrons.
         """
-        eta = self.mu / self.T
-        beta = self.T / ELECTRON_MASS
+        eta = self.mu / self.kT
+        beta = self.kT / ELECTRON_MASS
         f = fermion.fermion_everything(eta, beta)
 
         f['n'] *= (1.0 / self.Volume)
         f['p'] *= (self.Energy / self.Volume)
         f['u'] *= (self.Energy / self.Volume)
-        f['s']  = (f['u'] + f['p']) / self.T - f['n'] * eta
+        f['s']  = (f['u'] + f['p']) / self.kT - f['n'] * eta
 
         for k in "npus":
             self._terms[k] = f[k]
@@ -314,9 +317,10 @@ class FermiDiracElectrons(FermionComponent):
         T    : temperature (MeV)
         np   : the number density of positively charged baryons (1/fm^3)
         """
-        nu = fermion.solve_eta_pairs(T / ELECTRON_MASS, self.Volume * np)
-        eta = +(nu - ELECTRON_MASS/T)
-        super(FermiDiracElectrons, self).__init__(eta*T, T)
+        kT = self.temperature_to_MeV(T)
+        nu = fermion.solve_eta_pairs(kT / ELECTRON_MASS, self.Volume * np)
+        eta = +(nu - ELECTRON_MASS/kT)
+        super(FermiDiracElectrons, self).__init__(eta*kT, kT)
 
 
 
@@ -331,9 +335,10 @@ class FermiDiracPositrons(FermionComponent):
         T    : temperature (MeV)
         np   : the number density of positively charged baryons (1/fm^3)
         """
-        nu = fermion.solve_eta_pairs(self.T / ELECTRON_MASS, self.Volume * np)
-        eta = -(nu + ELECTRON_MASS/T)
-        super(FermiDiracPositrons, self).__init__(eta*T, T)
+        kT = self.temperature_to_MeV(T)
+        nu = fermion.solve_eta_pairs(kT / ELECTRON_MASS, self.Volume * np)
+        eta = -(nu + ELECTRON_MASS/kT)
+        super(FermiDiracElectrons, self).__init__(eta*kT, kT)
 
 
 
@@ -349,6 +354,8 @@ class ColdElectrons(FermionComponent):
         ne   : the number density of electrons (1/fm^3)
         """
         self.ne = ne
+        self._terms = { }
+        self._set_terms()
 
     def _set_terms(self):
         """
@@ -377,6 +384,8 @@ class DenseElectrons(FermionComponent):
         ne   : the number density of electrons (1/fm^3)
         """
         self.ne = ne
+        self._terms = { }
+        self._set_terms()
 
     def _set_terms(self):
         """
@@ -404,8 +413,8 @@ class NucleonsShenEos3(EquationOfStateTerms):
     _table = None # caches the hdf5 table once it is loaded
 
     def __init__(self, D, T, Y):
-        self.D = D
-        self.T = T
+        self.D = D.rescale('g/cm^3')
+        self.kT = self.temperature_in_MeV(T)
         self.Y = Y
         self._terms = { }
         self._set_terms()
@@ -421,16 +430,17 @@ class NucleonsShenEos3(EquationOfStateTerms):
                     'S', 'un', 'up']
             type(self)._table = shen.read_hdf5("data/eos3.h5", cols=cols)
 
-        D, kT, Ye = self.D, self.T, self.Y
+        D, kT, Ye = self.D.magnitude, self.kT.magnitude, self.Y
         t = self._terms
         e = type(self)._table
- 
-        t['n'] = shen.sample(e, 'nB'   , D, kT, Ye)
-        t['p'] = shen.sample(e, 'p'    , D, kT, Ye)
-        t['u'] = shen.sample(e, 'Eint' , D, kT, Ye) * t['n']
-        t['s'] = shen.sample(e, 'S'    , D, kT, Ye) # entropy per baryon
-        t['mu_n'] = shen.sample(e, 'un', D, kT, Ye) + 938.0
-        t['mu_p'] = shen.sample(e, 'up', D, kT, Ye) + 938.0
+        Eref = 938.0 * pq.MeV
+
+        t['n'] = shen.sample(e, 'nB'   , D, kT, Ye) / pq.fm**3
+        t['p'] = shen.sample(e, 'p'    , D, kT, Ye) * pq.MeV / pq.fm**3
+        t['u'] = shen.sample(e, 'Eint' , D, kT, Ye) * t['n'] * pq.MeV / pq.fm**3
+        t['s'] = shen.sample(e, 'S'    , D, kT, Ye) * self.kB # entropy per baryon
+        t['mu_n'] = shen.sample(e, 'un', D, kT, Ye) * pq.MeV + Eref
+        t['mu_p'] = shen.sample(e, 'up', D, kT, Ye) * pq.MeV + Eref
 
 
 

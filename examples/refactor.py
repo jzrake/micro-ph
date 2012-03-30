@@ -38,3 +38,18 @@ print gas.gamma_effective3(n, T)
 photon_gas = BlackbodyPhotons(40.0 * pq.MeV)
 print photon_gas.pressure()
 
+neutrino_gas = NeutrinoComponent(1.0 * pq.MeV, 40.0 * pq.MeV)
+print neutrino_gas.pressure()
+
+electron_gas = FermionComponent(1.0 * pq.MeV, 40.0 * pq.MeV)
+print electron_gas.pressure()
+
+cold_electrons = ColdElectrons(1.0 / pq.cm**3)
+print cold_electrons.pressure().rescale('MeV/cm^3')
+
+dense_electrons = DenseElectrons(1.0 / pq.cm**3)
+print dense_electrons.pressure().rescale('MeV/cm^3')
+
+nucleons = NucleonsShenEos3(1e13*pq.g/pq.cm**3, 40.0*pq.MeV, 0.08)
+print nucleons.pressure()
+print nucleons.number_density()
