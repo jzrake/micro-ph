@@ -26,6 +26,8 @@ class EquationOfStateTerms(object):
     Each instantiation of classes inheriting from this represents one point in
     the space of independent thermodynamic variables.
     """
+    kB = pq.constants.Boltzmann_constant
+
     def number_density(self):
         return self._gencall('n')
 
@@ -43,6 +45,24 @@ class EquationOfStateTerms(object):
 
     def _gencall(self, key):
         return self._terms[key]
+
+    def temperature_in_MeV(self, val):
+        """
+        Convenience function to convert temperature to energy.
+        """
+        if isinstance(val.dimensionality.keys()[0], pq.UnitTemperature):
+            return (val * self.kB).rescale('MeV')
+        else:
+            return val.rescale('MeV')
+
+    def temperature_in_Kelvin(self, val):
+        """
+        Convenience function to convert energy to temperature.
+        """
+        if isinstance(val.dimensionality.keys()[0], pq.UnitTemperature):
+            return val.rescale('K')
+        else:
+            return (val / self.kB).rescale('K')
 
 
 
@@ -149,7 +169,7 @@ class IdealAdiabatic(EquationOfStateTerms):
     """
     def __init__(self, n, T, gamma=1.4):
         self.n = n
-        self.T = T
+        self.T = self.temperature_in_Kelvin(T)
         self.gamma = gamma
         self._terms = { }
         self._set_terms()
@@ -158,14 +178,14 @@ class IdealAdiabatic(EquationOfStateTerms):
         g1 = self.gamma - 1.0
 
         n = self.n
-        p = self.n * pq.constants.Boltzmann_constant * self.T
+        p = self.n * self.kB * self.T
         s = np.log(p.magnitude/n.magnitude**self.gamma) / g1
 
         f = self._terms
         f['n'] = n
         f['p'] = p
         f['u'] = p / g1
-        f['s'] = s * pq.constants.Boltzmann_constant
+        f['s'] = s * self.kB
 
 
 
@@ -175,7 +195,7 @@ class BlackbodyPhotons(EquationOfStateTerms):
     parameter.
     """
     def __init__(self, T):
-        self.kT = units.Temperature(T).convert_to('MeV')
+        self.kT = self.kB * T
         self._terms = { }
         self._set_terms()
 

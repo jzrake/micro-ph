@@ -22,7 +22,6 @@ D = 1.2 * pq.kg / pq.meter**3.0
 n = D / (28*pq.constants.proton_mass)
 T = 293 * pq.Kelvin
 
-
 builder = EquationOfStateBuilder()
 gas = EquationOfStateEvaluator(builder)
 
