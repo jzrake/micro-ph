@@ -13,7 +13,7 @@ class MyEos(object):
                       MassDensity: 'kg/m^3',
                       Temperature: 'K' }
 
-    _variable_dict = {'n': 0, 'T': 1 }
+    _variable_dict = {'n': 0, 'T': 1}
     _input_units = [NumberDensity, Temperature]
     _num_deriv_dx = 1e-8
 
