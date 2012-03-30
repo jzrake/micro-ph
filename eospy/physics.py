@@ -45,6 +45,7 @@ class EquationOfStateTerms(object):
         return self._terms[key]
 
 
+
 class EquationOfStateEvaluator(object):
     """
     Instances of this class are composite equations of state, consisting of
@@ -52,7 +53,18 @@ class EquationOfStateEvaluator(object):
     EquationOfStateTerms, not an instance of a class. It knows how to create
     instances when it needs and query them for values or create derivatives.
     """
+    _units = {
+        'number_density': 1/pq.m**3,
+        'pressure': pq.pascal,
+        'internal_energy': pq.J/pq.m**3,
+        'specific_internal_energy': pq.J,
+        'entropy': pq.J/pq.K
+        }
     _num_deriv_dx = 1e-8
+
+    def __init__(self, builder):
+        self._vars = builder.get_vars()
+        self._builder = builder
 
     def set_numerical_derivative_step(self, dx):
         """
@@ -62,99 +74,72 @@ class EquationOfStateEvaluator(object):
         """
         self._num_deriv_step = dx
 
-    def number_density(self, D, T, Y, derivative=None):
-        return self._sample('number_density', derivative, D, T, Y)
+    def _call_attr(self, args, attr):
+        return sum([getattr(term, attr)() for term in
+                    self._builder.build_terms(args)], 0.0 * self._units[attr])
 
-    def pressure(self, D, T, Y, derivative=None):
-        return self._sample('pressure', derivative, D, T, Y)
+    def number_density(self, *args):
+        return self._call_attr(args, 'number_density')
 
-    def internal_energy(self, D, T, Y, derivative=None):
-        return self._sample('internal_energy', derivative, D, T, Y)
+    def pressure(self, *args):
+        return self._call_attr(args, 'pressure')
 
-    def specific_internal_energy(self, D, T, Y, derivative=None):
-        return self._sample('specific_internal_energy', derivative, D, T, Y)
+    def internal_energy(self, *args):
+        return self._call_attr(args, 'internal_energy')
 
-    def entropy(self, D, T, Y, derivative=None):
-        return self._sample('entropy', derivative, D, T, Y)
+    def specific_internal_energy(self, *args):
+        return self._call_attr(args, 'specific_internal_energy')
 
-    def gamma_effective(self, D, T, Y, method=2):
-        """
-        Computes the effective Gamma := (dlogp/dlogD)|_s to be used in the sound
-        speed: c_s^2 = (\Gamma*p) / (D*h) using one of three different methods.
-        """
-        if method == 1:
-            p = self.pressure(D,T,Y)
-            s = self.entropy(D,T,Y)
-            dpdD = self.pressure(D, T, Y, derivative='D')
-            dpdT = self.pressure(D, T, Y, derivative='T')
-            dsdD = self.entropy(D, T, Y, derivative='D')
-            dsdT = self.entropy(D, T, Y, derivative='T')
-            return (D/p)*(dpdD*dsdT - dpdT*dsdD) / dsdT
+    def entropy(self, *args):
+        return self._call_attr(args, 'entropy')
 
-        elif method == 2:
-            p = self.pressure(D,T,Y)
-            dpdD = self.pressure(D, T, Y, derivative='D')
-            dpdT = self.pressure(D, T, Y, derivative='T')
-            dedD = self.specific_internal_energy(D, T, Y, derivative='D')
-            dedT = self.specific_internal_energy(D, T, Y, derivative='T')
-            return (D/p)*(dpdD*dedT - dpdT*dedD + p/D**2 * dpdT)/dedT
+    def derivative(self, attr, var, *args):
+        dx = self._num_deriv_dx
+        X0, X1 = list(args), list(args)
 
-        elif method == 3:
-            p = self.pressure(D,T,Y)
-            dpdD = self.pressure(D, T, Y, derivative='D')
-            dpdT = self.pressure(D, T, Y, derivative='T')
-            dedD = self.specific_internal_energy(D, T, Y, derivative='D')
-            dedT = self.specific_internal_energy(D, T, Y, derivative='T')
+        n = self._vars[var]
 
-            return (D/p) * (dpdD*dedT + T/D**2 * dpdT**2) / dedT
+        X1[n] = X1[n]*(1.0 + dx)
+        X0[n] = X0[n]*(1.0 - dx)
 
-        else:
-            raise ValueError("Method must be either 1, 2, or 3")
+        f = lambda x: self._call_attr(x, attr)
+        return (f(X1) - f(X0)) / (X1[n] - X0[n])
 
+    """
+    The following three functions compute the effective Gamma :=
+    (dlogp/dlogD)|_s to be used in the sound speed: c_s^2 = (\Gamma*p) / (D*h)
+    using one of three different methods.
+    """
+    def gamma_effective1(self, *args):
+        n = args[self._vars['n']]
+        T = args[self._vars['T']]
+        p = self.pressure(*args)
+        s = self.entropy(*args)
+        dpdn = self.derivative('pressure', 'n', *args)
+        dpdT = self.derivative('pressure', 'T', *args)
+        dsdn = self.derivative('entropy', 'n', *args)
+        dsdT = self.derivative('entropy', 'T', *args)
+        return (n/p)*(dpdn*dsdT - dpdT*dsdn) / dsdT
 
-    def build_terms(self, *args):
-        """
-        This method should be over-ridden for building a composite EOS whose
-        terms are order-dependent, or are not instantiated with D, T, and Y.
-        """
-        raise NotImplementedError("Derived class must implement this method.")
+    def gamma_effective2(self, *args):
+        n = args[self._vars['n']]
+        T = args[self._vars['T']]
+        p = self.pressure(*args)
+        dpdn = self.derivative('pressure', 'n', *args)
+        dpdT = self.derivative('pressure', 'T', *args)
+        dedn = self.derivative('specific_internal_energy', 'n', *args)
+        dedT = self.derivative('specific_internal_energy', 'T', *args)
+        return (n/p)*(dpdn*dedT - dpdT*dedn + p/n**2 * dpdT)/dedT
 
-
-    def _sample(self, attr, derivative, *args):
-        """
-        Private function, general handler for samples of the EOS attributes and
-        their derivatives.
-        """
-        if not derivative:
-            return sum([getattr(term, attr)() for term in
-                        self.build_terms(*args)])
-
-        elif len(derivative) == 1:
-            f = lambda x: getattr(self, attr)(x, asobj=False)
-            n = {'D': 0, 'T': 1, 'Y': 2}[derivative]
-
-            dx = self._num_deriv_dx
-            X0, X1 = list(args), list(args)
-
-            X1[n] += X1[n]*dx
-            X0[n] -= X0[n]*dx
-
-            return (f(*X1) - f(*X0)) / (X1[n] - X0[n])
-
-        elif len(derivative) == 2:
-            """
-            Evaluating second derivatives. Unfinished.
-            """
-            raise NotImplementedError("Second derivative calculation not written.")
-            f = getattr(self, attr)
-            n0 = {'D': 0, 'T': 1, 'Y': 2}[derivative[0]]
-            n1 = {'D': 0, 'T': 1, 'Y': 2}[derivative[1]]
-            
-            dx = 1e-8
-            X00, X01, X10, X11 = list(args), list(args), list(args), list(args)
-
-        else:
-            raise ValueError("Derivative string must be 0, 1, or 2 characters")
+    def gamma_effective3(self, *args):
+        n = args[self._vars['n']]
+        T = args[self._vars['T']]
+        p = self.pressure(*args)
+        dpdn = self.derivative('pressure', 'n', *args)
+        dpdT = self.derivative('pressure', 'T', *args)
+        dedn = self.derivative('specific_internal_energy', 'n', *args)
+        dedT = self.derivative('specific_internal_energy', 'T', *args)
+        return (n/p) * (dpdn*dedT + T/n**2 * dpdT**2) / dedT
 
 
 
