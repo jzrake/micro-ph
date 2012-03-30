@@ -149,11 +149,11 @@ def ShenPressure():
     plt.show()
 
 
-ShenPressure()
+#ShenPressure()
 #ShenConsistency()
 
 
-#eos = EquationOfStateEvaluator([FermiDiracElectrons, FermiDiracPositrons])
+eos = EquationOfStateEvaluator([FermiDiracElectrons, FermiDiracPositrons])
 #eos = EquationOfStateEvaluator([BlackbodyPhotons])
 #PlotConsistency(eos, -2, 2, -3, 14, kelvin=False, N=20, title=r"$e_+/e_-$ pair consistency")
 

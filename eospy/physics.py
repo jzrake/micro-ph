@@ -88,9 +88,8 @@ class EquationOfStateEvaluator(object):
         }
     _num_deriv_dx = 1e-8
 
-    def __init__(self, builder):
-        self._vars = builder.get_vars()
-        self._builder = builder
+    def build_terms(self, args): raise NotImplementedError()
+    def get_vars(self): raise NotImplementedError()
 
     def set_numerical_derivative_step(self, dx):
         """
@@ -102,7 +101,7 @@ class EquationOfStateEvaluator(object):
 
     def _call_attr(self, args, attr):
         return sum([getattr(term, attr)() for term in
-                    self._builder.build_terms(args)], 0.0 * self._units[attr])
+                    self.build_terms(args)], 0.0 * self._units[attr])
 
     def number_density(self, *args):
         return self._call_attr(args, 'number_density')
@@ -466,80 +465,4 @@ class NucleonsShenEos3(EquationOfStateTerms):
         t['mu_n'] = shen.sample(e, 'un', D, kT, Ye) * pq.MeV + Eref
         t['mu_p'] = shen.sample(e, 'up', D, kT, Ye) * pq.MeV + Eref
 
-
-
-if __name__ == "__main__":
-    """
-    Runs some tests.
-    """
-    import unittest
-    print "testing", __file__
-
-    class TestEquationOfStateTerms(unittest.TestCase):
-
-        def test_instantiate(self):
-            with self.assertRaises(AttributeError):
-                eos = EquationOfStateTerms(1.0, 1.0, 1.0)
-
-
-    class TestBlackbodyPhotons(unittest.TestCase):
-
-        def test_instantiate(self):
-            with self.assertRaises(TypeError):
-                eos = BlackbodyPhotons(1.0)
-
-        def test_eos(self):
-            eos = BlackbodyPhotons(1e13, 40.0, 0.08)
-            self.assertIsInstance(eos.pressure(), float)
-            self.assertIsInstance(eos.entropy(), float)
-            self.assertEqual(eos.mass_density(), 0.0)
-
-
-    class TestColdElectrons(unittest.TestCase):
-
-        def test_eos(self):
-            eos = ColdElectrons(1e13, 40.0, 0.08)
-
-            self.assertIsInstance(eos.pressure(), float)
-            self.assertIsInstance(eos.mass_density(), float)
-
-            with self.assertRaises(KeyError):
-                s = eos.entropy()
-
-
-    class TestNucleonsShenEos3(unittest.TestCase):
-
-        def test_instantiate(self):
-            eos = NucleonsShenEos3(1e13, 40.0, 0.08)
-            self.assertIsNotNone(NucleonsShenEos3._table)
-
-        def test_eos(self):
-            eos = NucleonsShenEos3(1e13, 40.0, 0.08)
-            self.assertIsInstance(eos.pressure(), float)
-            self.assertIsInstance(eos.entropy(), float)
-
-        def test_chemical_potential(self):
-            eos = NucleonsShenEos3(1e13, 40.0, 0.08)
-            with self.assertRaises(ValueError):
-                eos.chemical_potential('dr. seuss')
-            self.assertIsInstance(eos.chemical_potential('protons'), float)
-
-
-    class TestEquationOfStateEvaluator(unittest.TestCase):
-        
-        def test_evaluate(self):
-            pho = BlackbodyPhotons(1e13, 40.0, 0.08)
-            ele = FermiDiracElectrons(1e13, 40.0, 0.08)
-            eos = EquationOfStateEvaluator([BlackbodyPhotons, FermiDiracElectrons])
-            self.assertEqual(eos.pressure(1e13, 40.0, 0.08),
-                             pho.pressure() + ele.pressure())
-
-        def test_derivatives(self):
-            eos = EquationOfStateEvaluator([BlackbodyPhotons, FermiDiracElectrons])
-            self.assertIsInstance(eos.pressure(1e13, 40.0, 0.08), float)
-            self.assertIsInstance(eos.pressure(1e13, 40.0, 0.08, 'D'), float)
-            self.assertIsInstance(eos.pressure(1e13, 40.0, 0.08, 'T'), float)
-            self.assertIsInstance(eos.pressure(1e13, 40.0, 0.08, 'Y'), float)
-
-    unittest.main()
 

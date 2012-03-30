@@ -1,22 +1,9 @@
 #!/usr/bin/env python
 
 import numpy as np
+import quantities as pq
 from eospy.physics import *
-from eospy import quantities as pq
-import math
-
-
-
-
-class EquationOfStateBuilder(object):
-
-    def build_terms(self, args):
-        gas = IdealAdiabatic(*args)
-        gas.particle_mass = 28*pq.constants.proton_mass
-        return [gas]
-
-    def get_vars(self):
-        return { 'n': 0, 'T': 1 }
+from eospy.eos import *
 
 
 
@@ -24,8 +11,7 @@ D = 1.2 * pq.kg / pq.meter**3.0
 n = D / (28*pq.constants.proton_mass)
 T = 293 * pq.Kelvin
 
-builder = EquationOfStateBuilder()
-gas = EquationOfStateEvaluator(builder)
+gas = AdiabaticGas()
 
 print gas.number_density(n, T).rescale('1/cm^3')
 print gas.pressure(n, T).rescale('atm')
