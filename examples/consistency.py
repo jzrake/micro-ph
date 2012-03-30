@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from eospy.physics import *
+from eospy.eos import *
 from matplotlib import pyplot as plt
 from matplotlib import ticker
 import numpy as np
@@ -14,20 +15,19 @@ def PlotConsistency(eos, T0, T1, D0, D1, Ye=0.08, kelvin=True, N=60, title=None)
     """
 
     def consistency(D, T, Y):
+        print "evaluating with", D, T, Y
         p    = eos.pressure(D, T, Y)
-        dpdT = eos.pressure(D, T, Y, derivative='T')
-        dedD = eos.specific_internal_energy(D, T, Y, derivative='D')
-
+        dpdT = eos.derivative('pressure', 'T', D, T, Y)
+        dedD = eos.derivative('specific_internal_energy', 'D', D, T, Y)
         return abs(1.0 - (D**2 * dedD + T*dpdT)/p)
 
     temp = np.logspace(T0, T1, 3)
     dens = np.logspace(D0, D1, N)
 
     for T in temp:
-        kT = T * BOLTZMANN_CONSTANT if kelvin else T
-        c = np.array([consistency(D, kT, Ye) for D in dens])
-        LT = np.log10(T)
-        lab = r"$T=10^{%d}\rm{K}$" % LT if kelvin else r"$T=%3.2f \ \rm{MeV}$" % T
+        c = np.array([consistency(D*pq.g/pq.cm**3, T*pq.MeV, Ye) for D in dens])
+        lab = pq.MeV.dimensionality.latex
+        lab = r"$10^{%d}$" % np.log10(T) + " " + lab
         plt.loglog(dens, c, '-o', label=lab)
 
     if title: plt.title(title)
@@ -153,7 +153,15 @@ def ShenPressure():
 #ShenConsistency()
 
 
-eos = EquationOfStateEvaluator([FermiDiracElectrons, FermiDiracPositrons])
+gas = ElectronPositronGas()
+#gas = AdiabaticGasWithDensity()
+
+D = 1e13 * pq.g / pq.cm**3
+T = 40.0 * pq.MeV
+#print gas.pressure(D, T, 0.08).rescale('MeV/fm^3')
+
+PlotConsistency(gas, -2, 2, -3, 14)
+
 #eos = EquationOfStateEvaluator([BlackbodyPhotons])
 #PlotConsistency(eos, -2, 2, -3, 14, kelvin=False, N=20, title=r"$e_+/e_-$ pair consistency")
 

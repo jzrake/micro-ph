@@ -46,6 +46,9 @@ class EquationOfStateTerms(object):
         return self._gencall('s')
 
     def specific_internal_energy(self):
+        return self._terms['u'] / self.mass_density()
+
+    def internal_energy_per_particle(self):
         return self._terms['u'] / self._terms['n']
 
     def _gencall(self, key):
@@ -82,7 +85,8 @@ class EquationOfStateEvaluator(object):
         'number_density': 1/pq.m**3,
         'pressure': pq.pascal,
         'internal_energy': pq.J/pq.m**3,
-        'specific_internal_energy': pq.J,
+        'specific_internal_energy': pq.J/pq.kg,
+        'internal_energy_per_particle': pq.J,
         'entropy': pq.J/pq.K,
         'enthalpy': pq.kg/pq.m**3
         }
@@ -115,6 +119,9 @@ class EquationOfStateEvaluator(object):
     def specific_internal_energy(self, *args):
         return self._call_attr(args, 'specific_internal_energy')
 
+    def internal_energy_per_particle(self, *args):
+        return self._call_attr(args, 'internal_energy_per_particle')
+
     def enthalpy(self, *args):
         return self._call_attr(args, 'enthalpy')
 
@@ -141,33 +148,37 @@ class EquationOfStateEvaluator(object):
         """
         method = kwargs.get('method', 2)
 
+        # Some terms may use number density 'n', while others may use the mass
+        # density 'D'.
+        den = self._density_var
+
         if method == 1:
-            n = args[self._vars['n']]
+            n = args[self._vars[den]]
             T = args[self._vars['T']]
             p = self.pressure(*args)
             s = self.entropy(*args)
-            dpdn = self.derivative('pressure', 'n', *args)
+            dpdn = self.derivative('pressure', den, *args)
             dpdT = self.derivative('pressure', 'T', *args)
-            dsdn = self.derivative('entropy', 'n', *args)
+            dsdn = self.derivative('entropy', den, *args)
             dsdT = self.derivative('entropy', 'T', *args)
             return (n/p)*(dpdn*dsdT - dpdT*dsdn) / dsdT
         elif method == 2:
-            n = args[self._vars['n']]
+            n = args[self._vars[den]]
             T = args[self._vars['T']]
             p = self.pressure(*args)
-            dpdn = self.derivative('pressure', 'n', *args)
+            dpdn = self.derivative('pressure', den, *args)
             dpdT = self.derivative('pressure', 'T', *args)
-            dedn = self.derivative('specific_internal_energy', 'n', *args)
-            dedT = self.derivative('specific_internal_energy', 'T', *args)
+            dedn = self.derivative('internal_energy_per_particle', den, *args)
+            dedT = self.derivative('internal_energy_per_particle', 'T', *args)
             return (n/p)*(dpdn*dedT - dpdT*dedn + p/n**2 * dpdT)/dedT
         elif method == 3:
-            n = args[self._vars['n']]
+            n = args[self._vars[den]]
             T = args[self._vars['T']]
             p = self.pressure(*args)
-            dpdn = self.derivative('pressure', 'n', *args)
+            dpdn = self.derivative('pressure', den, *args)
             dpdT = self.derivative('pressure', 'T', *args)
-            dedn = self.derivative('specific_internal_energy', 'n', *args)
-            dedT = self.derivative('specific_internal_energy', 'T', *args)
+            dedn = self.derivative('internal_energy_per_particle', den, *args)
+            dedT = self.derivative('internal_energy_per_particle', 'T', *args)
             return (n/p) * (dpdn*dedT + T/n**2 * dpdT**2) / dedT
         else:
             raise ValueError("method must be 1,2, or 3")
@@ -333,36 +344,36 @@ class FermiDiracElectrons(FermionComponent):
     """
     Evaluates the electron thermodynamics using exact Fermi-Dirac integrals.
     """
-    def __init__(self, T, np):
+    def __init__(self, np, T):
         """
         Parameters:
         --------------------------------------------------------
         T    : temperature (MeV)
         np   : the number density of positively charged baryons (1/fm^3)
         """
-        kT = self.temperature_to_MeV(T)
+        kT = self.temperature_in_MeV(T)
         nu = fermion.solve_eta_pairs(kT / ELECTRON_MASS, self.Volume * np)
         eta = +(nu - ELECTRON_MASS/kT)
         super(FermiDiracElectrons, self).__init__(eta*kT, kT)
-
+        print "building an electrons"
 
 
 class FermiDiracPositrons(FermionComponent):
     """
     Evaluates the positron thermodynamics using exact Fermi-Dirac integrals.
     """
-    def __init__(self, T, np):
+    def __init__(self, np, T):
         """
         Parameters:
         --------------------------------------------------------
         T    : temperature (MeV)
         np   : the number density of positively charged baryons (1/fm^3)
         """
-        kT = self.temperature_to_MeV(T)
+        kT = self.temperature_in_MeV(T)
         nu = fermion.solve_eta_pairs(kT / ELECTRON_MASS, self.Volume * np)
         eta = -(nu + ELECTRON_MASS/kT)
-        super(FermiDiracElectrons, self).__init__(eta*kT, kT)
-
+        super(FermiDiracPositrons, self).__init__(eta*kT, kT)
+        print "building a positrons"
 
 
 class ColdElectrons(FermionComponent):
