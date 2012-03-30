@@ -7,7 +7,7 @@ import quantities as pq
 
 
 LIGHT_SPEED        = 2.997924580e+10 # cm/s
-HBAR_C             = 1.973269718e+02 # MeV-fm
+HBAR_C             = (pq.constants.hbar * pq.c).rescale('MeV*fm')
 ELECTRON_MASS      = 5.110998928e-01 # MeV
 ATOMIC_MASS_UNIT   = 9.314940612e+02 # MeV
 PROTON_MASS        = 9.382720462e+02 # MeV
@@ -195,7 +195,7 @@ class BlackbodyPhotons(EquationOfStateTerms):
     parameter.
     """
     def __init__(self, T):
-        self.kT = self.kB * T
+        self.kT = self.temperature_in_MeV(T)
         self._terms = { }
         self._set_terms()
 
@@ -211,16 +211,11 @@ class BlackbodyPhotons(EquationOfStateTerms):
         T4 = np.power(self.kT, 4)
         a = pow(np.pi, 2) / (15*np.power(HBAR_C, 3))
 
-        n = T3 * 2 * z3 / (np.power(np.pi, 2.0) * np.power(HBAR_C, 3.0))
-        p = T4 * a / 3.0
-        u = T4 * a
-        s = (4./3.) * (T4 * a) / (self.kT / BOLTZMANN_CONSTANT)
-
         f = self._terms
-        f['n'] = units.NumberDensity([n, '1/fm^3'])
-        f['p'] = units.EnergyDensity([p, 'MeV/fm^3'])
-        f['u'] = units.EnergyDensity([p / g1, 'MeV/fm^3'])
-        f['s'] = units.Entropy([s, 'MeV/K'])
+        f['n'] = T3 * 2 * z3 / (np.power(np.pi, 2.0) * np.power(HBAR_C, 3.0))
+        f['p'] = T4 * a / 3.0
+        f['u'] = T4 * a
+        f['s'] = (4./3.) * (T4 * a) / (self.kT / self.kB)
 
 
 

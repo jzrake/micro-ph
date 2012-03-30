@@ -33,3 +33,8 @@ print gas.derivative('entropy', 'n', n, T).rescale('(MeV/K)/(1/cm^3)')
 print gas.gamma_effective1(n, T)
 print gas.gamma_effective2(n, T)
 print gas.gamma_effective3(n, T)
+
+
+photon_gas = BlackbodyPhotons(40.0 * pq.MeV)
+print photon_gas.pressure()
+
