@@ -45,13 +45,47 @@ class MyEos(object):
 
         n = self._vars[var]
 
-        X1[n] = X1[n]*(1 + dx)
-        X0[n] = X0[n]*(1 - dx)
+        X1[n] = X1[n]*(1.0 + dx)
+        X0[n] = X0[n]*(1.0 - dx)
 
         f = lambda x: self._call_attr(x, attr)
         return (f(X1) - f(X0)) / (X1[n] - X0[n])
 
+    """
+    The following three functions compute the effective Gamma :=
+    (dlogp/dlogD)|_s to be used in the sound speed: c_s^2 = (\Gamma*p) / (D*h)
+    using one of three different methods.
+    """
+    def gamma_effective1(self, *args):
+        n = args[self._vars['n']]
+        T = args[self._vars['T']]
+        p = self.pressure(*args)
+        s = self.entropy(*args)
+        dpdn = self.derivative('pressure', 'n', *args)
+        dpdT = self.derivative('pressure', 'T', *args)
+        dsdn = self.derivative('entropy', 'n', *args)
+        dsdT = self.derivative('entropy', 'T', *args)
+        return (n/p)*(dpdn*dsdT - dpdT*dsdn) / dsdT
 
+    def gamma_effective2(self, *args):
+        n = args[self._vars['n']]
+        T = args[self._vars['T']]
+        p = self.pressure(*args)
+        dpdn = self.derivative('pressure', 'n', *args)
+        dpdT = self.derivative('pressure', 'T', *args)
+        dedn = self.derivative('specific_internal_energy', 'n', *args)
+        dedT = self.derivative('specific_internal_energy', 'T', *args)
+        return (n/p)*(dpdn*dedT - dpdT*dedn + p/n**2 * dpdT)/dedT
+
+    def gamma_effective3(self, *args):
+        n = args[self._vars['n']]
+        T = args[self._vars['T']]
+        p = self.pressure(*args)
+        dpdn = self.derivative('pressure', 'n', *args)
+        dpdT = self.derivative('pressure', 'T', *args)
+        dedn = self.derivative('specific_internal_energy', 'n', *args)
+        dedT = self.derivative('specific_internal_energy', 'T', *args)
+        return (n/p) * (dpdn*dedT + T/n**2 * dpdT**2) / dedT
 
 
 
@@ -66,4 +100,7 @@ print gas.number_density(n, T).rescale('1/cm^3')
 print gas.pressure(n, T).rescale('atm')
 print gas.entropy(n, T).rescale('MeV/K')
 
-print gas.derivative('entropy', 'D', n, T).rescale('(MeV/K)/(1/cm^3)')
+print gas.derivative('entropy', 'n', n, T).rescale('(MeV/K)/(1/cm^3)')
+print gas.gamma_effective1(n, T)
+print gas.gamma_effective2(n, T)
+print gas.gamma_effective3(n, T)
