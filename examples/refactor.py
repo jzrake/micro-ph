@@ -1,90 +1,69 @@
 #!/usr/bin/env python
 
-from matplotlib import pyplot as plt
 import numpy as np
 from eospy.physics import *
-from eospy.units import *
-
+from eospy import quantities as pq
+import math
 
 class MyEos(object):
 
-    _output_units = { EnergyDensity: 'atm',
-                      NumberDensity: '1/cm^3',
-                      MassDensity: 'kg/m^3',
-                      Temperature: 'K' }
-
-    _variable_dict = {'n': 0, 'T': 1}
-    _input_units = [NumberDensity, Temperature]
+    _units = {
+        'number_density': 1/pq.m**3,
+        'pressure': pq.pascal,
+        'internal_energy': pq.J/pq.m**3,
+        'specific_internal_energy': pq.J,
+        'entropy': pq.J/pq.K
+        }
     _num_deriv_dx = 1e-8
+    _vars = { 'n':0, 'T': 1 }
 
-    def _build_terms(self, A):
-        n = A[0]
-        T = A[1]
-        return [IdealAdiabatic(n, T, gamma=1.4)]
+    def _build_terms(self, args):
+        return [IdealAdiabatic(*args)]
 
-    def _sample(self, A, key, derivative):
-        """
-        A is an array of arguments for the EOS, each of which must be a
-        dimensional quantity. Return value is in physics base (SI) units.
-        """
-        if not derivative:
-            return sum([getattr(term, key)(asobj=False)
-                        for term in self._build_terms(A)])
+    def _call_attr(self, args, attr):
+        return sum([getattr(term, attr)() for term in
+                    self._build_terms(args)], 0.0 * self._units[attr])
 
-        elif len(derivative) == 1:
-            n = self._variable_dict[derivative]
-            dx = self._num_deriv_dx
-            X0, X1 = list(A), list(A)
+    def number_density(self, *args):
+        return self._call_attr(args, 'number_density')
 
-            X0[n] = X0[n].scale(1.0 - dx)
-            X1[n] = X1[n].scale(1.0 + dx)
+    def pressure(self, *args):
+        return self._call_attr(args, 'pressure')
 
-            f = lambda a: self._sample(a, key, None)
-            return (f(X1) - f(X0)) / (X1[n].val - X0[n].val)
+    def internal_energy(self, *args):
+        return self._call_attr(args, 'internal_energy')
 
-        elif len(derivative) == 2:
-            raise NotImplementedError(
-                "Second derivative calculation not written.")
-        else:
-            raise ValueError(
-                "Derivative string must be 0, 1, or 2 characters")
+    def specific_internal_energy(self, *args):
+        return self._call_attr(args, 'specific_internal_energy')
 
-    def _call_sample(self, A, key, unitClass, derivative):
-        """ Output units are ignored if derivative is being used. """
-        B = [U(a) for U,a in zip(self._input_units, A)]
-        if derivative:
-            return self._sample(B, key, derivative)
-        else:
-            return unitClass(self._sample(B, key, derivative),
-                             default_unit=self._output_units[unitClass])
+    def entropy(self, *args):
+        return self._call_attr(args, 'entropy')
 
-    def pressure(self, n, T, derivative=None):
-        return self._call_sample([n, T], 'pressure',
-                                 EnergyDensity, derivative)
+    def derivative(self, attr, var, *args):
+        dx = self._num_deriv_dx
+        X0, X1 = list(args), list(args)
+
+        n = self._vars[var]
+
+        X1[n] = X1[n]*(1 + dx)
+        X0[n] = X0[n]*(1 - dx)
+
+        f = lambda x: self._call_attr(x, attr)
+        return (f(X1) - f(X0)) / (X1[n] - X0[n])
 
 
 
 
 
-rho = MassDensity([1.2, 'kg/m^3'])
-n = rho.to_number_density(ProtonMass.scale(28.0))
-T = RoomTemperature
 
+D = 1.2 * pq.kg / pq.meter**3.0
+n = D / (28*pq.constants.proton_mass)
+T = 293 * pq.Kelvin
 
-gas = IdealAdiabatic(n, T, gamma=1.4)
+gas = MyEos()
 
-print gas.pressure()
-print gas.entropy()
+print gas.number_density(n, T).rescale('1/cm^3')
+print gas.pressure(n, T).rescale('atm')
+print gas.entropy(n, T).rescale('MeV/K')
 
-print n, n.measured_in('1/cm^3')
-print gas.specific_internal_energy()
-print 5./2. * T.convert_to('J')
-
-eos = MyEos()
-
-
-n = MassDensity([1.2, 'kg/m^3']).to_number_density(ProtonMass.scale(28.0))
-T = [293.0, 'K']
-
-print eos.pressure(n, T)
-print eos.pressure(n, T, derivative='T')
+print gas.derivative('entropy', 'D', n, T).rescale('(MeV/K)/(1/cm^3)')

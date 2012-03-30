@@ -3,6 +3,7 @@ import numpy as np
 import shen
 import fermion
 import units
+import quantities as pq
 
 
 LIGHT_SPEED        = 2.997924580e+10 # cm/s
@@ -25,24 +26,23 @@ class EquationOfStateTerms(object):
     Each instantiation of classes inheriting from this represents one point in
     the space of independent thermodynamic variables.
     """
-    def number_density(self, units=None, asobj=True):
-        return self._gencall('n', units, asobj)
+    def number_density(self):
+        return self._gencall('n')
 
-    def pressure(self, units=None, asobj=True):
-        return self._gencall('p', units, asobj)
+    def pressure(self):
+        return self._gencall('p')
 
-    def internal_energy(self, units=None, asobj=True):
-        return self._gencall('u', units, asobj)
+    def internal_energy(self):
+        return self._gencall('u')
 
-    def entropy(self, units=None, asobj=True):
-        return self._gencall('s', units, asobj)
+    def entropy(self):
+        return self._gencall('s')
 
     def specific_internal_energy(self):
-        return self._terms['u'].convert_to() / self._terms['n'].convert_to()
+        return self._terms['u'] / self._terms['n']
 
-    def _gencall(self, key, units, asobj):
-        return (self._terms[key].measured_in(units) if asobj else
-                self._terms[key].convert_to(units))
+    def _gencall(self, key):
+        return self._terms[key]
 
 
 class EquationOfStateEvaluator(object):
@@ -126,7 +126,7 @@ class EquationOfStateEvaluator(object):
         their derivatives.
         """
         if not derivative:
-            return sum([getattr(term, attr)(asobj=False) for term in
+            return sum([getattr(term, attr)() for term in
                         self.build_terms(*args)])
 
         elif len(derivative) == 1:
@@ -163,22 +163,24 @@ class IdealAdiabatic(EquationOfStateTerms):
     Represents an adiabatic equation of state, with adiabatic constant 'gamma'.
     """
     def __init__(self, n, T, gamma=1.4):
-        self.n = units.NumberDensity(n).convert_to('1/fm^3')
-        self.kT = units.Temperature(T).convert_to('MeV')
+        self.n = n
+        self.T = T
         self.gamma = gamma
         self._terms = { }
         self._set_terms()
 
     def _set_terms(self):
         g1 = self.gamma - 1.0
-        p = self.n * self.kT
-        s = np.log(p/self.n**self.gamma) / g1
+
+        n = self.n
+        p = self.n * pq.constants.Boltzmann_constant * self.T
+        s = np.log(p.magnitude/n.magnitude**self.gamma) / g1
 
         f = self._terms
-        f['n'] = units.NumberDensity([self.n, '1/fm^3'])
-        f['p'] = units.EnergyDensity([p, 'MeV/fm^3'])
-        f['u'] = units.EnergyDensity([p / g1, 'MeV/fm^3'])
-        f['s'] = units.Entropy([s, 'MeV/K'])
+        f['n'] = n
+        f['p'] = p
+        f['u'] = p / g1
+        f['s'] = s * pq.constants.Boltzmann_constant
 
 
 
