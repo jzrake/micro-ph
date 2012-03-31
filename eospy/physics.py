@@ -6,10 +6,6 @@ import units
 import quantities as pq
 
 
-HBAR_C             = (pq.constants.hbar * pq.c).rescale('MeV*fm')
-ELECTRON_MASS      = (pq.constants.electron_mass * pq.c**2).rescale('MeV')
-
-
 class EquationOfStateTerms(object):
     """
     Base class for EOS terms, which in general are responsible for returning the
@@ -19,7 +15,9 @@ class EquationOfStateTerms(object):
     Each instantiation of classes inheriting from this represents one point in
     the space of independent thermodynamic variables.
     """
-    kB = pq.constants.Boltzmann_constant
+    kB = pq.constants.Boltzmann_constant.rescale('MeV/K')
+    hc = (pq.constants.hbar * pq.c).rescale('MeV*fm')
+    me = (pq.constants.electron_mass * pq.c**2).rescale('MeV')
 
     def number_density(self):
         return self._gencall('n')
@@ -244,10 +242,10 @@ class BlackbodyPhotons(EquationOfStateTerms):
         z3 = 1.202056903159594285 # RiemannZeta(3), Mathematica
         T3 = np.power(self.kT, 3)
         T4 = np.power(self.kT, 4)
-        a = pow(np.pi, 2) / (15*np.power(HBAR_C, 3))
+        a = pow(np.pi, 2) / (15*np.power(self.hc, 3))
 
         f = self._terms
-        f['n'] = T3 * 2 * z3 / (np.power(np.pi, 2.0) * np.power(HBAR_C, 3.0))
+        f['n'] = T3 * 2 * z3 / (np.power(np.pi, 2.0) * np.power(self.hc, 3.0))
         f['p'] = T4 * a / 3.0
         f['u'] = T4 * a
         f['s'] = (4./3.) * (T4 * a) / (self.kT / self.kB)
@@ -280,7 +278,7 @@ class NeutrinoComponent(EquationOfStateTerms):
         return 0.0
 
     def _set_terms(self):
-        Volume = np.power(np.pi, 2) * np.power(HBAR_C/self.kT, 3)
+        Volume = np.power(np.pi, 2) * np.power(self.hc/self.kT, 3)
         Energy = self.kT
 
         f = fermion.neutrino_everything(self.mu/self.kT)
@@ -301,8 +299,10 @@ class FermionComponent(EquationOfStateTerms):
     """
     Represents an EOS component of electrons or positrons.
     """
-    Volume = np.power(np.pi, 2) * np.power(HBAR_C/ELECTRON_MASS, 3)
-    Energy = ELECTRON_MASS
+
+    _volume = (np.power(np.pi, 2) *
+               np.power(EquationOfStateTerms.hc/EquationOfStateTerms.me, 3))
+    _energy = EquationOfStateTerms.me
 
     def __init__(self, mu, T):
         """
@@ -329,12 +329,12 @@ class FermionComponent(EquationOfStateTerms):
         (n,p,u,s) for both electrons and positrons.
         """
         eta = self.mu / self.kT
-        beta = self.kT / ELECTRON_MASS
+        beta = self.kT / self.me
         f = fermion.fermion_everything(eta, beta)
 
-        f['n'] *= (1.0 / self.Volume)
-        f['p'] *= (self.Energy / self.Volume)
-        f['u'] *= (self.Energy / self.Volume)
+        f['n'] *= (1.0 / self._volume)
+        f['p'] *= (self._energy / self._volume)
+        f['u'] *= (self._energy / self._volume)
         f['s']  = (f['u'] + f['p']) / self.kT - f['n'] * eta
 
         for k in "npus":
@@ -356,10 +356,10 @@ class FermiDiracElectrons(FermionComponent):
         np   : the number density of positively charged baryons (1/fm^3)
         """
         kT = self.temperature_in_MeV(T)
-        nu = fermion.solve_eta_pairs(kT / ELECTRON_MASS, self.Volume * np)
-        eta = +(nu - ELECTRON_MASS/kT)
+        nu = fermion.solve_eta_pairs(kT / self.me, self._volume * np)
+        eta = +(nu - self.me/kT)
         super(FermiDiracElectrons, self).__init__(eta*kT, kT)
-        print "building an electrons"
+
 
 
 class FermiDiracPositrons(FermionComponent):
@@ -374,10 +374,10 @@ class FermiDiracPositrons(FermionComponent):
         np   : the number density of positively charged baryons (1/fm^3)
         """
         kT = self.temperature_in_MeV(T)
-        nu = fermion.solve_eta_pairs(kT / ELECTRON_MASS, self.Volume * np)
-        eta = -(nu + ELECTRON_MASS/kT)
+        nu = fermion.solve_eta_pairs(kT / self.me, self._volume * np)
+        eta = -(nu + self.me/kT)
         super(FermiDiracPositrons, self).__init__(eta*kT, kT)
-        print "building a positrons"
+
 
 
 class ColdElectrons(FermionComponent):
@@ -399,8 +399,8 @@ class ColdElectrons(FermionComponent):
         """
         http://scienceworld.wolfram.com/physics/ElectronDegeneracyPressure.html
         """
-        num = np.power(np.pi, 2) * np.power(HBAR_C, 2)
-        den = 5.0 * ELECTRON_MASS
+        num = np.power(np.pi, 2) * np.power(self.hc, 2)
+        den = 5.0 * self.me
         las = np.power(3.0/np.pi, 2./3.) * np.power(self.ne, 5./3.)
 
         self._terms['n'] = self.ne
@@ -430,7 +430,7 @@ class DenseElectrons(FermionComponent):
         The Physical Universe: An Introduction to Astronomy, Frank H. Shu (1982)
         """
         self._terms['n'] = self.ne
-        self._terms['p'] = 0.123 * 2*np.pi * HBAR_C * np.power(self.ne, 4./3.)
+        self._terms['p'] = 0.123 * 2*np.pi * self.hc * np.power(self.ne, 4./3.)
         # 'u' not implemented yet
         # 's' not implemented yet
 

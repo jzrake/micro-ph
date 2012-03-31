@@ -160,7 +160,7 @@ D = 1e13 * pq.g / pq.cm**3
 T = 40.0 * pq.MeV
 #print gas.pressure(D, T, 0.08).rescale('MeV/fm^3')
 
-PlotConsistency(gas, -2, 2, -3, 14)
+PlotConsistency(gas, -2, 2, -3, 14, N=4)
 
 #eos = EquationOfStateEvaluator([BlackbodyPhotons])
 #PlotConsistency(eos, -2, 2, -3, 14, kelvin=False, N=20, title=r"$e_+/e_-$ pair consistency")

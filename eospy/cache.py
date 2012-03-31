@@ -25,23 +25,21 @@ class LimitedSizeDict(OrderedDict):
 
 class memoized(object):
    """
-   Decorator that caches a function's return value each time it is called.  If
+   Decorator that caches a function's return value each time it is called. If
    called later with the same arguments, the cached value is returned, and not
    re-evaluated.
    """
    def __init__(self, size_limit=10000):
        self.cache = LimitedSizeDict(size_limit=size_limit)
-       
+
    def __call__(self, func):
        @wraps(func)
        def new_func(*args):
            hashed_args = tuple(self._hash_quantity(a) for a in args)
            try:
                res = self.cache[hashed_args]
-               print "using hashed value", hashed_args
                return res
            except KeyError:
-               print "creating new cached value for", hashed_args
                value = func(*args)
                self.cache[hashed_args] = value
                return value
