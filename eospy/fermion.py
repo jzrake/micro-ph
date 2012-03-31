@@ -40,7 +40,7 @@ from scipy.optimize import brentq
 import numpy as np
 import timmes.fdfunc
 import fdfunc
-
+import cache
 
 
 _FnBackend = "timmes"
@@ -219,7 +219,7 @@ def electron_everything(eta, beta):
     return res
 
 
-
+@cache.memoized()
 def solve_eta_pairs(beta, C):
     """
     Solves the implicit equation ne(e,b) - np(e,b) = C for e := eta, where C is

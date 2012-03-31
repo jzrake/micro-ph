@@ -22,8 +22,9 @@
  * -----------------------------------------------------------------------------
  """
 
-import units
+
 import physics
+import eos
 import fermion
 import fdfunc
 import shen

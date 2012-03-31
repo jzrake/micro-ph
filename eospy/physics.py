@@ -92,8 +92,12 @@ class EquationOfStateEvaluator(object):
         }
     _num_deriv_dx = 1e-8
 
-    def build_terms(self, args): raise NotImplementedError()
-    def get_vars(self): raise NotImplementedError()
+    def build_terms(self, args):
+        """
+        This method should be over-ridden to return a list of
+        EquationOfStateTerms instances which are built from *args*.
+        """
+        raise NotImplementedError()
 
     def set_numerical_derivative_step(self, dx):
         """

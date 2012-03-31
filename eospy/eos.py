@@ -8,6 +8,7 @@ class AdiabaticGas(physics.EquationOfStateEvaluator):
     _density_var = 'n'
     _vars = { 'n': 0, 'T': 1 }
 
+    @cache.memoized()
     def build_terms(self, args):
         gas = physics.IdealAdiabatic(*args)
         gas.particle_mass = 28*pq.constants.proton_mass
@@ -22,6 +23,9 @@ class AdiabaticGasWithDensity(physics.EquationOfStateEvaluator):
 
     @cache.memoized()
     def build_terms(self, args):
+        """
+        Builds the EOS of an ideal gas with adiabatic EOS.
+        """
         D, T, Y = args
         n = D / self._mp
         gas = physics.IdealAdiabatic(n, T)

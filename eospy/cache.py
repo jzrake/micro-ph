@@ -1,5 +1,27 @@
 
 import quantities as pq
+from functools import wraps
+from collections import OrderedDict
+
+
+class LimitedSizeDict(OrderedDict):
+    """
+    Used by the cacheing decorator to limit the size of the cache.
+    """
+    def __init__(self, *args, **kwargs):
+        self.size_limit = kwargs.pop("size_limit", None)
+        OrderedDict.__init__(self, *args, **kwargs)
+        self._check_size_limit()
+
+    def __setitem__(self, key, value):
+        OrderedDict.__setitem__(self, key, value)
+        self._check_size_limit()
+
+    def _check_size_limit(self):
+        if self.size_limit is not None:
+            while len(self) > self.size_limit:
+                self.popitem(last=False)
+
 
 class memoized(object):
    """
@@ -7,11 +29,11 @@ class memoized(object):
    called later with the same arguments, the cached value is returned, and not
    re-evaluated.
    """
-   def __init__(self):
-       self.cache = {}
-       print "creating a new instance of memoize"
+   def __init__(self, size_limit=10000):
+       self.cache = LimitedSizeDict(size_limit=size_limit)
        
    def __call__(self, func):
+       @wraps(func)
        def new_func(*args):
            hashed_args = tuple(self._hash_quantity(a) for a in args)
            try:
