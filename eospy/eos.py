@@ -45,3 +45,15 @@ class ElectronPositronGas(physics.EquationOfStateEvaluator):
         ele = physics.FermiDiracElectrons(np, T)
         pos = physics.FermiDiracPositrons(np, T)
         return [ele, pos]
+
+
+class ShenNucleons(physics.EquationOfStateEvaluator):
+
+    _density_var = 'D'
+    _vars = { 'D': 0, 'T': 1, 'Y': 2 }
+
+    @cache.memoized()
+    def build_terms(self, args):
+        D, T, Yp = args
+        nuc = physics.NucleonsShenEos3(D, T, Yp)
+        return [nuc]

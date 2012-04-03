@@ -42,3 +42,7 @@ print dense_electrons.pressure().rescale('MeV/cm^3')
 nucleons = NucleonsShenEos3(1e13*pq.g/pq.cm**3, 40.0*pq.MeV, 0.08)
 print nucleons.pressure()
 print nucleons.number_density()
+
+gas2 = AdiabaticGasWithDensity()
+print gas2.pressure(1.2e-3*pq.g/pq.cm**3, 290.0*pq.K, 0.0)
+print gas2.gamma_effective(1.2e-3*pq.g/pq.cm**3, 290.0*pq.K, 0.0)

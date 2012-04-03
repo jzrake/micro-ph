@@ -153,6 +153,8 @@ class EquationOfStateEvaluator(object):
         # Some terms may use number density 'n', while others may use the mass
         # density 'D'.
         den = self._density_var
+        ekey = ('specific_internal_energy' if den is 'D' else
+                'internal_energy_per_particle')
 
         if method == 1:
             n = args[self._vars[den]]
@@ -163,24 +165,24 @@ class EquationOfStateEvaluator(object):
             dpdT = self.derivative('pressure', 'T', *args)
             dsdn = self.derivative('entropy', den, *args)
             dsdT = self.derivative('entropy', 'T', *args)
-            return (n/p)*(dpdn*dsdT - dpdT*dsdn) / dsdT
+            return (n/p) * (dpdn*dsdT - dpdT*dsdn) / dsdT
         elif method == 2:
             n = args[self._vars[den]]
             T = args[self._vars['T']]
             p = self.pressure(*args)
             dpdn = self.derivative('pressure', den, *args)
             dpdT = self.derivative('pressure', 'T', *args)
-            dedn = self.derivative('internal_energy_per_particle', den, *args)
-            dedT = self.derivative('internal_energy_per_particle', 'T', *args)
-            return (n/p)*(dpdn*dedT - dpdT*dedn + p/n**2 * dpdT)/dedT
+            dedn = self.derivative(ekey, den, *args)
+            dedT = self.derivative(ekey, 'T', *args)
+            return (n/p) * (dpdn*dedT - dpdT*dedn + p/n**2 * dpdT) / dedT
         elif method == 3:
             n = args[self._vars[den]]
             T = args[self._vars['T']]
             p = self.pressure(*args)
             dpdn = self.derivative('pressure', den, *args)
             dpdT = self.derivative('pressure', 'T', *args)
-            dedn = self.derivative('internal_energy_per_particle', den, *args)
-            dedT = self.derivative('internal_energy_per_particle', 'T', *args)
+            dedn = self.derivative(ekey, den, *args)
+            dedT = self.derivative(ekey, 'T', *args)
             return (n/p) * (dpdn*dedT + T/n**2 * dpdT**2) / dedT
         else:
             raise ValueError("method must be 1,2, or 3")
@@ -462,6 +464,9 @@ class NucleonsShenEos3(EquationOfStateTerms):
         if type == 'protons' : return self._terms['mu_p']
         raise ValueError("'type' must be either 'neutrons' or 'protons'")
 
+    def mass_density(self):
+        return self._terms['rhoB']
+
     def _set_terms(self):
         if type(self)._table is None:
             cols = ['log10_rhoB', 'logT', 'Yp', 'p', 'nB', 'Eint',
@@ -475,9 +480,9 @@ class NucleonsShenEos3(EquationOfStateTerms):
 
         t['n'] = shen.sample(e, 'nB'   , D, kT, Ye) / pq.fm**3
         t['p'] = shen.sample(e, 'p'    , D, kT, Ye) * pq.MeV / pq.fm**3
-        t['u'] = shen.sample(e, 'Eint' , D, kT, Ye) * t['n'] * pq.MeV / pq.fm**3
+        t['u'] = shen.sample(e, 'Eint' , D, kT, Ye) * t['n'] * pq.MeV
         t['s'] = shen.sample(e, 'S'    , D, kT, Ye) * self.kB # entropy per baryon
         t['mu_n'] = shen.sample(e, 'un', D, kT, Ye) * pq.MeV + Eref
         t['mu_p'] = shen.sample(e, 'up', D, kT, Ye) * pq.MeV + Eref
-
+        t['rhoB'] = 10**shen.sample(e, 'log10_rhoB', D, kT, Ye) * pq.g/pq.cm**3
 

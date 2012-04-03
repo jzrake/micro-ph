@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
 from eospy.physics import *
+from eospy import eos
 from matplotlib import pyplot as plt
 import numpy as np
-
+import quantities as pq
 
 
 def TestGamma():
@@ -13,10 +14,10 @@ def TestGamma():
     temp = np.logspace(np.log10(T0), np.log10(T1), 40)
 
 
-    eos = EquationOfStateEvaluator([IdealAdiabatic])
-    gamma1 = [eos.gamma_effective(D,T,Ye,method=1)-1.4 for T in temp]
-    gamma2 = [eos.gamma_effective(D,T,Ye,method=2)-1.4 for T in temp]
-    gamma3 = [eos.gamma_effective(D,T,Ye,method=3)-1.4 for T in temp]
+    gas = EquationOfStateEvaluator([IdealAdiabatic])
+    gamma1 = [gas.gamma_effective(D,T,Ye,method=1)-1.4 for T in temp]
+    gamma2 = [gas.gamma_effective(D,T,Ye,method=2)-1.4 for T in temp]
+    gamma3 = [gas.gamma_effective(D,T,Ye,method=3)-1.4 for T in temp]
 
     plt.semilogx(temp, gamma1, '-o', lw=1.5, label='method 1')
     plt.semilogx(temp, gamma2, '-s', lw=1.5, label='method 2')
@@ -37,21 +38,17 @@ def TestGamma2():
     Ye = 0.08
     temp = np.logspace(np.log10(T0), np.log10(T1), 4)
 
+    gas = eos.ShenNucleons()
+    gamma = [[gas.gamma_effective(D*pq.g/pq.cm**3, T*pq.MeV, Ye, method=m) for
+              T in temp] for m in [1,2,3]]
 
-    eos = EquationOfStateEvaluator([NucleonsShenEos3])
-    gamma1 = [eos.gamma_effective(D,T,Ye,method=1) for T in temp]
-    gamma2 = [eos.gamma_effective(D,T,Ye,method=2) for T in temp]
-    gamma3 = [eos.gamma_effective(D,T,Ye,method=3) for T in temp]
+    print '1', gamma[0]
+    print '2', gamma[1]
+    print '3', gamma[2]
 
-
-    print '1', gamma1
-    print '2', gamma2
-    print '3', gamma3
-
-
-    plt.semilogx(temp, gamma1, '-o', lw=1.5, label='method 1')
-    plt.semilogx(temp, gamma2, '-s', lw=1.5, label='method 2')
-    plt.semilogx(temp, gamma3, '-x', lw=1.5, label='method 3')
+    plt.semilogx(temp, gamma[0], '-o', lw=1.5, label='method 1')
+    plt.semilogx(temp, gamma[1], '-s', lw=1.5, label='method 2')
+    plt.semilogx(temp, gamma[2], '-x', lw=1.5, label='method 3')
 
     plt.title(r"Error in $\Gamma$ for an adiabatic equation of state")
 
@@ -61,4 +58,4 @@ def TestGamma2():
     plt.show()
 
 
-TestGamma()
+TestGamma2()
