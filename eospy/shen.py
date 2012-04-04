@@ -44,6 +44,7 @@
 
 from scipy import ndimage
 import numpy as np
+import quantities as pq
 import h5py
 import physics
 
@@ -107,6 +108,51 @@ def load_eos3(fname):
             table[iD, iT, iY] = data
 
     return table
+
+
+
+def append_sound_speeds(table):
+    """
+    Adds the keys cs1, cs2, and cs3 to the table by computing the sound speed in
+    three different ways.
+    """
+    n = table['nB']
+    u = n * table['Eint']
+    D = 10**table['log10_rhoB']
+    T = 10**table['logT']
+    p = table['p']
+    s = table['S']
+    rhoh = D*pq.g/pq.cm**3 + (u + p)*pq.MeV/pq.fm**3/pq.c**2
+
+    # the 2-point derivative works better than the 5-point one for this
+    deriv = derivative2
+
+    dpdn = deriv(table['p'], table['nB'], 0)
+    dpdT = deriv(table['p'], T, 1)
+    dsdn = deriv(table['S'], table['nB'], 0)
+    dsdT = deriv(table['S'], T, 1)
+    dedn = deriv(table['Eint'], table['nB'], 0)
+    dedT = deriv(table['Eint'], T, 1)
+
+    gamma1 = (n/p) * (dpdn*dsdT - dpdT*dsdn) / dsdT
+    gamma2 = (n/p) * (dpdn*dedT - dpdT*dedn + p/n**2 * dpdT) / dedT
+    gamma3 = (n/p) * (dpdn*dedT + T/n**2 * dpdT**2) / dedT
+
+    cs1 = np.sqrt(gamma1 * (p * pq.MeV/pq.fm**3) / rhoh)
+    cs2 = np.sqrt(gamma2 * (p * pq.MeV/pq.fm**3) / rhoh)
+    cs3 = np.sqrt(gamma3 * (p * pq.MeV/pq.fm**3) / rhoh)
+
+    cs1.units = 'c'
+    cs2.units = 'c'
+    cs3.units = 'c'
+
+    table['gamma1'] = gamma1
+    table['gamma2'] = gamma2
+    table['gamma3'] = gamma3
+
+    table['cs1'] = cs1.magnitude
+    table['cs2'] = cs2.magnitude
+    table['cs3'] = cs3.magnitude
 
 
 

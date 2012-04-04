@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 
-from eospy.physics import *
-from eospy.eos import *
+import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import ticker
-import numpy as np
+import quantities as pq
+from eospy.physics import *
+from eospy.eos import *
 
 
 def PlotConsistency(eos, T0, T1, D0, D1, Ye=0.08, kelvin=True, N=60, title=None):
@@ -165,11 +166,11 @@ def ShenSoundSpeed():
     majorFormatter = ticker.FuncFormatter(
         lambda x, pos: r"$10^{%d}$" % int(x) if np.floor(x) == x else "")
 
-    def do_image(C, title=None, Yi=10):
+    def do_image(C, title=None, Yi=10, vmin=None, vmax=None):
         fig = plt.figure()
 
         plt.imshow(C[2:-2,2:-2,Yi].T, origin='lower', interpolation='nearest',
-                   extent=extent, aspect=aspect)
+                   extent=extent, aspect=aspect, vmin=vmin, vmax=vmax)
 
         plt.colorbar()
         fig.suptitle(title, fontsize=14)
@@ -179,28 +180,15 @@ def ShenSoundSpeed():
         plt.ylabel(r"$T \ \rm{MeV}$", fontsize=16)
 
     tex = r"$(p - n_B^2 \frac{\partial F}{\partial n_B})/p$"
+    shen.append_sound_speeds(table)
 
-    n = table['nB']
-    T = 10**table['logT']
-    p = table['p']
-    s = table['S']
+    do_image(table['gamma1'], title=r"$\Gamma_{\rm{eff}} \ \rm{method 1}$", Yi=10)
+    do_image(table['gamma2'], title=r"$\Gamma_{\rm{eff}} \ \rm{method 2}$", Yi=10)
+    do_image(table['gamma3'], title=r"$\Gamma_{\rm{eff}} \ \rm{method 3}$", Yi=10)
 
-    deriv = shen.derivative2
-
-    dpdn = deriv(table['p'], table['nB'], 0)
-    dpdT = deriv(table['p'], T, 1)
-    dsdn = deriv(table['S'], table['nB'], 0)
-    dsdT = deriv(table['S'], T, 1)
-    dedn = deriv(table['Eint'], table['nB'], 0)
-    dedT = deriv(table['Eint'], T, 1)
-
-    gamma1 = (n/p) * (dpdn*dsdT - dpdT*dsdn) / dsdT
-    gamma2 = (n/p) * (dpdn*dedT - dpdT*dedn + p/n**2 * dpdT) / dedT
-    gamma3 = (n/p) * (dpdn*dedT + T/n**2 * dpdT**2) / dedT
-
-    do_image(gamma1, title=r"$\Gamma_{\rm{eff}}$ method 1", Yi=10)
-    do_image(gamma2, title=r"$\Gamma_{\rm{eff}}$ method 2", Yi=10)
-    do_image(gamma3, title=r"$\Gamma_{\rm{eff}}$ method 3", Yi=10)
+    do_image(table['cs1'], title=r"$c_s \ \rm{method 1}$", Yi=10)
+    do_image(table['cs2'], title=r"$c_s \ \rm{method 2}$", Yi=10)
+    do_image(table['cs3'], title=r"$c_s \ \rm{method 3}$", Yi=10)
 
     plt.show()
 
@@ -212,8 +200,8 @@ ShenSoundSpeed()
 #gas = ElectronPositronGas()
 #gas = AdiabaticGasWithDensity()
 
-D = 1e13 * pq.g / pq.cm**3
-T = 40.0 * pq.MeV
+#D = 1e13 * pq.g / pq.cm**3
+#T = 40.0 * pq.MeV
 #print gas.pressure(D, T, 0.08).rescale('MeV/fm^3')
 
 #PlotConsistency(gas, -2, 2, -3, 14, N=4)
