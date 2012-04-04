@@ -149,18 +149,74 @@ def ShenPressure():
     plt.show()
 
 
+def ShenSoundSpeed():
+    """
+    Checks consistency of sound speeds using different formulas and difference
+    stencils.
+    """
+    cols = cols=['log10_rhoB', 'p', 'F', 'nB', 'Eint', 'logT', 'S']
+    table = shen.read_hdf5("data/eos3.h5", cols=cols)
+
+    extent = [table['log10_rhoB'][2,0,0], table['log10_rhoB'][-2,0,0],
+              table['logT'][0,2,0], table['logT'][0,-2,0]]
+    aspect = (extent[1] - extent[0]) / (extent[3] - extent[2])
+
+
+    majorFormatter = ticker.FuncFormatter(
+        lambda x, pos: r"$10^{%d}$" % int(x) if np.floor(x) == x else "")
+
+    def do_image(C, title=None, Yi=10):
+        fig = plt.figure()
+
+        plt.imshow(C[2:-2,2:-2,Yi].T, origin='lower', interpolation='nearest',
+                   extent=extent, aspect=aspect)
+
+        plt.colorbar()
+        fig.suptitle(title, fontsize=14)
+        fig.axes[0].get_xaxis().set_major_formatter(majorFormatter)
+        fig.axes[0].get_yaxis().set_major_formatter(majorFormatter)
+        plt.xlabel(r"$\rho \ \rm{g/cm^3}$", fontsize=16)
+        plt.ylabel(r"$T \ \rm{MeV}$", fontsize=16)
+
+    tex = r"$(p - n_B^2 \frac{\partial F}{\partial n_B})/p$"
+
+    n = table['nB']
+    T = 10**table['logT']
+    p = table['p']
+    s = table['S']
+
+    deriv = shen.derivative2
+
+    dpdn = deriv(table['p'], table['nB'], 0)
+    dpdT = deriv(table['p'], T, 1)
+    dsdn = deriv(table['S'], table['nB'], 0)
+    dsdT = deriv(table['S'], T, 1)
+    dedn = deriv(table['Eint'], table['nB'], 0)
+    dedT = deriv(table['Eint'], T, 1)
+
+    gamma1 = (n/p) * (dpdn*dsdT - dpdT*dsdn) / dsdT
+    gamma2 = (n/p) * (dpdn*dedT - dpdT*dedn + p/n**2 * dpdT) / dedT
+    gamma3 = (n/p) * (dpdn*dedT + T/n**2 * dpdT**2) / dedT
+
+    do_image(gamma1, title=r"$\Gamma_{\rm{eff}}$ method 1", Yi=10)
+    do_image(gamma2, title=r"$\Gamma_{\rm{eff}}$ method 2", Yi=10)
+    do_image(gamma3, title=r"$\Gamma_{\rm{eff}}$ method 3", Yi=10)
+
+    plt.show()
+
+
 #ShenPressure()
 #ShenConsistency()
+ShenSoundSpeed()
 
-
-gas = ElectronPositronGas()
+#gas = ElectronPositronGas()
 #gas = AdiabaticGasWithDensity()
 
 D = 1e13 * pq.g / pq.cm**3
 T = 40.0 * pq.MeV
 #print gas.pressure(D, T, 0.08).rescale('MeV/fm^3')
 
-PlotConsistency(gas, -2, 2, -3, 14, N=4)
+#PlotConsistency(gas, -2, 2, -3, 14, N=4)
 
 #eos = EquationOfStateEvaluator([BlackbodyPhotons])
 #PlotConsistency(eos, -2, 2, -3, 14, kelvin=False, N=20, title=r"$e_+/e_-$ pair consistency")

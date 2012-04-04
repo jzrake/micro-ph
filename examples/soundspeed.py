@@ -3,6 +3,7 @@
 from eospy.physics import *
 from eospy import eos
 from matplotlib import pyplot as plt
+from matplotlib import ticker
 import numpy as np
 import quantities as pq
 
@@ -58,4 +59,38 @@ def TestGamma2():
     plt.show()
 
 
-TestGamma2()
+
+def TestGamma3():
+    D0, D1 = 1e6, 1e15
+    T0, T1 = 0.2, 250.0
+    Ye = 0.08
+    temp = np.logspace(np.log10(T0), np.log10(T1), 32)
+    dens = np.logspace(np.log10(D0), np.log10(D1), 32)
+
+    gas = eos.ShenNucleons()
+    gamma = np.array([[gas.gamma_effective(D*pq.g/pq.cm**3, T*pq.MeV, Ye, method=1) for
+                       T in temp] for D in dens])
+
+    extent = [np.log10(D0), np.log10(D1), np.log10(T0), np.log10(T1)]
+    aspect = (extent[1] - extent[0]) / (extent[3] - extent[2])
+
+    majorFormatter = ticker.FuncFormatter(
+        lambda x, pos: r"$10^{%d}$" % int(x) if np.floor(x) == x else "")
+
+    def do_image(C, title=None, Yi=10):
+        fig = plt.figure()
+        plt.imshow(C.T, origin='lower', extent=extent, aspect=aspect,
+                   interpolation='nearest')
+
+        plt.colorbar()
+        fig.suptitle(title, fontsize=14)
+        fig.axes[0].get_xaxis().set_major_formatter(majorFormatter)
+        fig.axes[0].get_yaxis().set_major_formatter(majorFormatter)
+        plt.xlabel(r"$\rho \ \rm{g/cm^3}$", fontsize=16)
+        plt.ylabel(r"$T \ \rm{MeV}$", fontsize=16)
+
+    do_image(gamma, title=r"$\Gamma_{\rm{eff}}$ with method 1, $Y_p=0.08$")
+    plt.show()
+
+
+TestGamma3()
