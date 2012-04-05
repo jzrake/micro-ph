@@ -306,7 +306,7 @@ class FermionComponent(EquationOfStateTerms):
                np.power(EquationOfStateTerms.hc/EquationOfStateTerms.me, 3))
     _energy = EquationOfStateTerms.me
 
-    def __init__(self, mu, T):
+    def __init__(self, sgn, mu, T):
         """
         Parameters:
         --------------------------------------------------------
@@ -314,6 +314,7 @@ class FermionComponent(EquationOfStateTerms):
         mu   : chemical potential, without rest-mass (MeV)
         T    : temperature (MeV)
         """
+        self.sgn = sgn
         self.mu = mu
         self.kT = self.temperature_in_MeV(T)
         self._terms = { }
@@ -332,7 +333,7 @@ class FermionComponent(EquationOfStateTerms):
         """
         eta = self.mu / self.kT
         beta = self.kT / self.me
-        f = fermion.fermion_everything(eta, beta)
+        f = fermion.fermion_everything(self.sgn, eta, beta)
 
         f['n'] *= (1.0 / self._volume)
         f['p'] *= (self._energy / self._volume)
@@ -342,7 +343,7 @@ class FermionComponent(EquationOfStateTerms):
         for k in "npus":
             self._terms[k] = f[k]
 
-        self._terms['eta'] = eta
+        self._terms['eta'] = f['eta']
 
 
 
@@ -358,9 +359,8 @@ class FermiDiracElectrons(FermionComponent):
         np   : the number density of positively charged baryons (1/fm^3)
         """
         kT = self.temperature_in_MeV(T)
-        nu = fermion.solve_eta_pairs(kT / self.me, self._volume * np)
-        eta = +(nu - self.me/kT)
-        super(FermiDiracElectrons, self).__init__(eta*kT, kT)
+        eta = fermion.solve_eta_pairs(kT / self.me, self._volume * np)
+        super(FermiDiracElectrons, self).__init__(+1, eta*kT, kT)
 
 
 
@@ -376,9 +376,8 @@ class FermiDiracPositrons(FermionComponent):
         np   : the number density of positively charged baryons (1/fm^3)
         """
         kT = self.temperature_in_MeV(T)
-        nu = fermion.solve_eta_pairs(kT / self.me, self._volume * np)
-        eta = -(nu + self.me/kT)
-        super(FermiDiracPositrons, self).__init__(eta*kT, kT)
+        eta = fermion.solve_eta_pairs(kT / self.me, self._volume * np)
+        super(FermiDiracPositrons, self).__init__(-1, eta*kT, kT)
 
 
 

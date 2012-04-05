@@ -1,4 +1,3 @@
-
 """
  * -----------------------------------------------------------------------------
  * FILE: fermion.py
@@ -40,7 +39,7 @@ from scipy.optimize import brentq
 import numpy as np
 import timmes.fdfunc
 import fdfunc
-import cache
+
 
 
 _FnBackend = "timmes"
@@ -73,7 +72,7 @@ def Fn_all(n, eta, beta):
 
 
 
-def fermion_everything(eta, beta):
+def fermion_everything(sgn, eta, beta):
     """
     Evaluates the dimensionless number density, pressure, and internal energy,
     and entropy.
@@ -99,8 +98,14 @@ def fermion_everything(eta, beta):
     Volume : pi^2 (h/mc)^3
     Energy : mc^2
 
-    The formulae below are taken from Beaudet & Tassoul (1971).
+    The formulae below are taken from Beaudet & Tassoul (1971). The idea of
+    subtracting the rest-mass from the chemical potential is inspired by TA99.
+
     """
+    # For positrons, see TA99 eqn (5)
+    if sgn < 0:
+        eta = -eta - 2/beta
+
     F, Fe, Fb = Fn_all(0.5, eta, beta)[:3]
     G, Ge, Gb = Fn_all(1.5, eta, beta)[:3]
     H, He, Hb = Fn_all(2.5, eta, beta)[:3]
@@ -115,27 +120,24 @@ def fermion_everything(eta, beta):
     res['n'] = (1./2.) * t15 * B15 * (F + 1.0*beta*G)
     res['p'] = (1./3.) * t15 * B25 * (G + 0.5*beta*H)
     res['u'] = (1./2.) * t15 * B25 * (G + 1.0*beta*H)
+    res['eta'] = eta
 
-    # res['eta'] = eta
-
-    """
     # Correct for the self-energy of positrons, TA99 eqn (9)
     if sgn < 0:
         res['u'] += 2*res['n']
-        """
 
     return res
 
 
 
-def neutrino_everything(eta):
+def neutrino_everything(sgn, eta):
     """
     Evaluates the dimensionless number density, pressure, and internal energy,
     and entropy.
 
     Parameters:
     --------------------------------------------------------
-
+    sgn  : +/-     ... +1 for particle, -1 for anti-particle
     eta  : mu/kT   ... chemical potential
 
 
@@ -156,11 +158,9 @@ def neutrino_everything(eta):
     The formulae below are taken from Beaudet & Tassoul (1971).
     """
 
-    """
     # For anti-neutrinos, see TA99 eqn (5)
     if sgn < 0:
         eta = -eta
-        """
 
     F2 = Fn_all(2.0, eta, 0.0)[0]
     F3 = Fn_all(3.0, eta, 0.0)[0]
@@ -176,11 +176,12 @@ def neutrino_everything(eta):
 
 
 
-def electron_everything(eta, beta):
+def electron_everything(sgn, eta, beta):
     """
     Like fermion_everything, but also generates derivatives of n, p, and u. Only
     works for electrons right now.
     """
+    assert(sgn > 0)
 
     F, Fe, Fb = Fn_all(0.5, eta, beta)[:3]
     G, Ge, Gb = Fn_all(1.5, eta, beta)[:3]
@@ -219,7 +220,7 @@ def electron_everything(eta, beta):
     return res
 
 
-@cache.memoized()
+
 def solve_eta_pairs(beta, C):
     """
     Solves the implicit equation ne(e,b) - np(e,b) = C for e := eta, where C is
@@ -231,18 +232,12 @@ def solve_eta_pairs(beta, C):
 
     beta : kT / mc^2    ... relativity parameter
     C    : n * V0       ... dimensionless number density
-
-    Returns:
-    --------------------------------------------------------
-
-    nu ... dimensionless chemical potential of electrons (including rest-mass)
-
     """
-    def f(nu):
+    def f(eta):
         """ ne(e,b) - np(e,b) = C """
         return \
-            fermion_everything(+(nu - 1.0 / beta), beta)['n'] - \
-            fermion_everything(-(nu + 1.0 / beta), beta)['n'] - C
+            fermion_everything(+1, eta, beta)['n'] - \
+            fermion_everything(-1, eta, beta)['n'] - C
 
     bracket = 1.0
     while f(bracket) * f(-bracket) > 0.0: bracket *= 2.0

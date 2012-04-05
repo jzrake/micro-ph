@@ -1,7 +1,9 @@
 
 import quantities as pq
 import physics
+import shen
 import cache
+
 
 class AdiabaticGas(physics.EquationOfStateEvaluator):
 
@@ -41,7 +43,7 @@ class ElectronPositronGas(physics.EquationOfStateEvaluator):
     @cache.memoized()
     def build_terms(self, args):
         D, T, Yp = args
-        np = Yp * D / pq.constants.electron_mass
+        np = Yp * D / shen.amu
         ele = physics.FermiDiracElectrons(np, T)
         pos = physics.FermiDiracPositrons(np, T)
         return [ele, pos]

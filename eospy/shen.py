@@ -49,11 +49,11 @@ import h5py
 import physics
 
 
-
 _col_names = ['logT', 'log10_rhoB', 'nB', 'Yp', 'F', 'Eint', 'S', 'A', 'Z',
              'MN', 'Xn', 'Xp', 'Xa', 'XA', 'p', 'un', 'up', 'ML', 'XL']
 _var_index = { n:i for i,n in enumerate(_col_names) }
 
+amu = 931.494 * pq.MeV / pq.c**2 # user guide's value for atomic mass unit
 
 def load_eos3(fname):
     """
