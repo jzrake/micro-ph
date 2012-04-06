@@ -150,7 +150,7 @@ def ShenPressure():
     plt.show()
 
 
-def ShenSoundSpeed():
+def ShenSoundSpeed(image=True):
     """
     Checks consistency of sound speeds using different formulas and difference
     stencils.
@@ -166,7 +166,10 @@ def ShenSoundSpeed():
     majorFormatter = ticker.FuncFormatter(
         lambda x, pos: r"$10^{%d}$" % int(x) if np.floor(x) == x else "")
 
-    def do_image(C, title=None, Yi=10, vmin=None, vmax=None):
+    Di = 79 # 10^13 g/cm^3
+    Yi = 7  # 0.08
+
+    def do_image(C, title=None, vmin=None, vmax=None):
         fig = plt.figure()
 
         plt.imshow(C[2:-2,2:-2,Yi].T, origin='lower', interpolation='nearest',
@@ -179,23 +182,49 @@ def ShenSoundSpeed():
         plt.xlabel(r"$\rho \ \rm{g/cm^3}$", fontsize=16)
         plt.ylabel(r"$T \ \rm{MeV}$", fontsize=16)
 
+    def do_csplot(x, y, *args, **kwargs):
+        plt.loglog(x[Di,2:-2,Yi], y[Di,2:-2,Yi], lw=1.5, *args, **kwargs)
+        plt.ylabel(r"$c_s/c$", fontsize=16)
+        plt.xlabel(r"$T \ \rm{MeV}$", fontsize=16)
+
+    def do_gmplot(x, y, *args, **kwargs):
+        plt.semilogx(x[Di,2:-2,Yi], y[Di,2:-2,Yi], lw=1.5, *args, **kwargs)
+        plt.ylabel(r"$\Gamma_{\rm{eff}}$", fontsize=16)
+        plt.xlabel(r"$T \ \rm{MeV}$", fontsize=16)
+
     tex = r"$(p - n_B^2 \frac{\partial F}{\partial n_B})/p$"
     shen.append_sound_speeds(table)
 
-    do_image(table['gamma1'], title=r"$\Gamma_{\rm{eff}} \ \rm{method 1}$", Yi=10)
-    do_image(table['gamma2'], title=r"$\Gamma_{\rm{eff}} \ \rm{method 2}$", Yi=10)
-    do_image(table['gamma3'], title=r"$\Gamma_{\rm{eff}} \ \rm{method 3}$", Yi=10)
+    if image:
+        do_image(table['gamma1'], title=r"$\Gamma_{\rm{eff}} \ \rm{method 1}$")
+        do_image(table['gamma2'], title=r"$\Gamma_{\rm{eff}} \ \rm{method 2}$")
+        do_image(table['gamma3'], title=r"$\Gamma_{\rm{eff}} \ \rm{method 3}$")
 
-    do_image(table['cs1'], title=r"$c_s \ \rm{method 1}$", Yi=10)
-    do_image(table['cs2'], title=r"$c_s \ \rm{method 2}$", Yi=10)
-    do_image(table['cs3'], title=r"$c_s \ \rm{method 3}$", Yi=10)
+        do_image(table['cs1'], title=r"$c_s \ \rm{method 1}$")
+        do_image(table['cs2'], title=r"$c_s \ \rm{method 2}$")
+        do_image(table['cs3'], title=r"$c_s \ \rm{method 3}$")
+    else:
+        plt.figure()
+        do_csplot(10**table['logT'], table['cs1'], label='method 1', ls='--')
+        do_csplot(10**table['logT'], table['cs2'], label='method 2', ls=':')
+        do_csplot(10**table['logT'], table['cs3'], label='method 3', ls='-.')
+        plt.title(r"Sound speed from different methods at $\rho=10^{%d}\ \rm{g/cm^3}$"
+                  % table['log10_rhoB'][Di,0,0], fontsize=14)
+        plt.legend(loc='upper left')
 
+        plt.figure()
+        do_gmplot(10**table['logT'], table['gamma1'], label='method 1', ls='--')
+        do_gmplot(10**table['logT'], table['gamma2'], label='method 2', ls=':')
+        do_gmplot(10**table['logT'], table['gamma3'], label='method 3', ls='-.')
+        plt.title(r"Effective $\Gamma$ from different methods at $\rho=10^{%d}\ \rm{g/cm^3}$"
+                  % table['log10_rhoB'][Di,0,0], fontsize=14)
+        plt.legend(loc='upper left')
     plt.show()
 
 
 #ShenPressure()
 #ShenConsistency()
-ShenSoundSpeed()
+ShenSoundSpeed(image=False)
 
 #gas = ElectronPositronGas()
 #gas = AdiabaticGasWithDensity()
