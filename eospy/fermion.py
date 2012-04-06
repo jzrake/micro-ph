@@ -130,14 +130,13 @@ def fermion_everything(sgn, eta, beta):
 
 
 
-def neutrino_everything(sgn, eta):
+def neutrino_everything(eta):
     """
     Evaluates the dimensionless number density, pressure, and internal energy,
     and entropy.
 
     Parameters:
     --------------------------------------------------------
-    sgn  : +/-     ... +1 for particle, -1 for anti-particle
     eta  : mu/kT   ... chemical potential
 
 
@@ -157,10 +156,6 @@ def neutrino_everything(sgn, eta):
 
     The formulae below are taken from Beaudet & Tassoul (1971).
     """
-
-    # For anti-neutrinos, see TA99 eqn (5)
-    if sgn < 0:
-        eta = -eta
 
     F2 = Fn_all(2.0, eta, 0.0)[0]
     F3 = Fn_all(3.0, eta, 0.0)[0]

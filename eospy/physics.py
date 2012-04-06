@@ -237,6 +237,9 @@ class BlackbodyPhotons(EquationOfStateTerms):
     def mass_density(self):
         return 0.0
 
+    def chemical_potential(self):
+        return 0.0
+
     def _set_terms(self):
         """
         http://en.wikipedia.org/wiki/Photon_gas
@@ -279,6 +282,9 @@ class NeutrinoComponent(EquationOfStateTerms):
         """
         return 0.0
 
+    def chemical_potential(self):
+        return self._terms['mu']
+
     def _set_terms(self):
         Volume = np.power(np.pi, 2) * np.power(self.hc/self.kT, 3)
         Energy = self.kT
@@ -294,7 +300,7 @@ class NeutrinoComponent(EquationOfStateTerms):
             self._terms[k] = f[k]
 
         self._terms['eta'] = f['eta']
-
+        self._terms['mu'] = self._terms['eta'] * self.kT
 
 
 class FermionComponent(EquationOfStateTerms):
@@ -326,6 +332,9 @@ class FermionComponent(EquationOfStateTerms):
         """
         return self._terms['n'] * pq.constants.electron_mass
 
+    def chemical_potential(self):
+        return self._terms['mu']
+
     def _set_terms(self):
         """
         Sets the number density, pressure, internal energy, and specific entropy
@@ -343,8 +352,8 @@ class FermionComponent(EquationOfStateTerms):
         for k in "npus":
             self._terms[k] = f[k]
 
-        self._terms['eta'] = f['eta']
-
+        self._terms['eta'] = f['eta'] # without rest-mass
+        self._terms['mu'] = self._terms['eta'] * self.kT + self.me # with rest-mass
 
 
 class FermiDiracElectrons(FermionComponent):
@@ -475,6 +484,9 @@ class NucleonsShenEos3(EquationOfStateTerms):
         D, kT, Ye = self.D.magnitude, self.kT.magnitude, self.Y
         t = self._terms
         e = type(self)._table
+
+        # user guide explains that chemical potentials are with respect to the
+        # free-nucleon mass
         Eref = 938.0 * pq.MeV
 
         t['n'] = shen.sample(e, 'nB'   , D, kT, Ye) / pq.fm**3
