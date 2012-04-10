@@ -119,10 +119,12 @@ class EquationOfStateEvaluator(object):
         return self._call_attr(args, 'internal_energy')
 
     def specific_internal_energy(self, *args):
-        return self._call_attr(args, 'specific_internal_energy')
+        return (self._call_attr(args, 'internal_energy') /
+                args[self._vars['D']])
 
     def internal_energy_per_particle(self, *args):
-        return self._call_attr(args, 'internal_energy_per_particle')
+        return (self._call_attr(args, 'internal_energy') /
+                self._call_attr(args, 'number_density'))
 
     def enthalpy(self, *args):
         return self._call_attr(args, 'enthalpy')
@@ -152,9 +154,9 @@ class EquationOfStateEvaluator(object):
 
         # Some terms may use number density 'n', while others may use the mass
         # density 'D'.
-        den = self._density_var
-        ekey = ('specific_internal_energy' if den is 'D' else
-                'internal_energy_per_particle')
+        den = 'D'#self._density_var
+        ekey = 'specific_internal_energy' #('specific_internal_energy' if den is 'D' else
+               # 'internal_energy_per_particle')
 
         if method == 1:
             n = args[self._vars[den]]
@@ -235,10 +237,10 @@ class BlackbodyPhotons(EquationOfStateTerms):
         self._set_terms()
 
     def mass_density(self):
-        return 0.0
+        return 0.0 * pq.g/pq.cm**3
 
     def chemical_potential(self):
-        return 0.0
+        return 0.0 * pq.MeV
 
     def _set_terms(self):
         """
@@ -280,7 +282,7 @@ class NeutrinoComponent(EquationOfStateTerms):
         """
         Neutrinos are massless.
         """
-        return 0.0
+        return 0.0 * pq.g/pq.cm**3
 
     def chemical_potential(self):
         return self._terms['mu']
