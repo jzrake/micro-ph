@@ -4,6 +4,7 @@ import numpy as np
 import quantities as pq
 from matplotlib import pyplot as plt
 from eospy.physics import *
+from eospy.cache import memoized
 from eospy import eos
 
 
@@ -31,21 +32,38 @@ def do_pressure(D, N=12):
 
 
 
-def do_soundspeed(D, N=12):
+def do_soundspeed(gas, D, N=12, method=2):
     Yp = 0.08
     T0, T1 = 1.0, 200.0
     temp = np.logspace(np.log10(T0), np.log10(T1), N) * pq.MeV
-    gas = eos.NeutronStarEos()
 
-    result = [gas.gamma_effective(D, T, Yp, method=2) for T in temp]
+    result = [(gas.sound_speed(D, T, Yp, method=method) / pq.c).rescale('')
+              for T in temp]
     print result
 
-    plt.semilogx(temp, result)
-    plt.title(r"Various EOS components for $Y_p=0.08$ $\rho=10^{%d} \ \rm{g/cm^3}$" %
-              int(np.log10(D.magnitude)))
+    plt.semilogx(temp, result, '-o', mfc='none', lw=1.5,
+                 label=r"$\rho=10^{%d} \ \rm{g/cm^3}$"%
+                 int(np.log10(D.magnitude)))
     plt.xlabel(r"$k_B T \ \rm{MeV}$", fontsize=16)
     plt.ylabel(r"$c_s/c$", fontsize=16)
-    #plt.legend(loc='lower right')
+    plt.legend(loc='lower right')
+
+
+
+def do_gamma(gas, D, N=12, method=2):
+    Yp = 0.08
+    T0, T1 = 1.0, 200.0
+    temp = np.logspace(np.log10(T0), np.log10(T1), N) * pq.MeV
+
+    result = [gas.gamma_effective(D, T, Yp, method=method) for T in temp]
+    print result
+
+    plt.semilogx(temp, result, '-o', mfc='none', lw=1.5,
+                 label=r"$\rho=10^{%d} \ \rm{g/cm^3}$"%
+                 int(np.log10(D.magnitude)))
+    plt.xlabel(r"$k_B T \ \rm{MeV}$", fontsize=16)
+    plt.ylabel(r"$\Gamma_{\rm{eff}}$", fontsize=16)
+    plt.legend(loc='upper right')
 
 
 
@@ -60,12 +78,27 @@ def Pressure():
 
 
 def SoundSpeed():
+
+    gas = eos.NeutronStarEos()
+    memoized.load_cache('eos.cache')
+
     D = 1e13 * pq.g/pq.cm**3
-    N = 6
-    do_soundspeed(1e-1*D, N)
-    do_soundspeed(1e+0*D, N)
-    do_soundspeed(1e+1*D, N)
-    plt.show()
+    N = 96
+
+    for m in [2,3]:
+        do_soundspeed(gas, 1e-1*D, N, method=m)
+        do_soundspeed(gas, 1e+0*D, N, method=m)
+        do_soundspeed(gas, 1e+1*D, N, method=m)
+        plt.savefig("nseos_cs_method%d.png" % m)
+        plt.clf()
+
+        do_gamma(gas, 1e-1*D, N, method=m)
+        do_gamma(gas, 1e+0*D, N, method=m)
+        do_gamma(gas, 1e+1*D, N, method=m)
+        plt.savefig("nseos_gamma_method%d.png" % m)
+        plt.clf()
+
+    memoized.save_cache('eos.cache')
 
 
 

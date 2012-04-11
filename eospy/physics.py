@@ -119,15 +119,25 @@ class EquationOfStateEvaluator(object):
         return self._call_attr(args, 'internal_energy')
 
     def specific_internal_energy(self, *args):
-        return (self._call_attr(args, 'internal_energy') /
-                args[self._vars['D']])
+        u = self.internal_energy(*args)
+        D = args[self._vars['D']]
+        return u / D
 
     def internal_energy_per_particle(self, *args):
-        return (self._call_attr(args, 'internal_energy') /
-                self._call_attr(args, 'number_density'))
+        """
+        Warning! This function should not be used on compound EOS's. The number
+        densities will be treated additively, which may not be what the user
+        expects.
+        """
+        u = self.internal_energy(*args)
+        n = self.number_density()
+        return u / n
 
     def enthalpy(self, *args):
-        return self._call_attr(args, 'enthalpy')
+        D = args[self._vars['D']]
+        u = self.internal_energy(*args)
+        p = self.pressure(*args)
+        return D + (u + p)/pq.c**2
 
     def entropy(self, *args):
         return self._call_attr(args, 'entropy')
@@ -141,7 +151,7 @@ class EquationOfStateEvaluator(object):
         X1[n] = X1[n]*(1.0 + dx)
         X0[n] = X0[n]*(1.0 - dx)
 
-        f = lambda x: self._call_attr(x, attr)
+        f = lambda x: getattr(self, attr)(*x)
         return (f(X1) - f(X0)) / (X1[n] - X0[n])
 
     def gamma_effective(self, *args, **kwargs):

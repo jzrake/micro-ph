@@ -1,5 +1,6 @@
 
 import quantities as pq
+import pickle
 from functools import wraps
 from collections import OrderedDict
 
@@ -29,7 +30,27 @@ class memoized(object):
    called later with the same arguments, the cached value is returned, and not
    re-evaluated.
    """
-   def __init__(self, size_limit=10000):
+   _instances = { }
+
+   @classmethod
+   def save_cache(self, fname):
+       f = open(fname, 'w')
+       pickle.dump(self._instances, f)
+
+   @classmethod
+   def load_cache(self, fname):
+       try:
+           f = open(fname, 'r')
+           instances = pickle.load(f)
+           for k in instances:
+               self._instances[k].cache = instances[k].cache
+       except:
+           print "Warning! Could not open the cache file", fname
+
+   def __init__(self, klass=None, size_limit=10000):
+       self._klass = klass
+       if klass is not None:
+           self._instances[klass] = self
        self.cache = LimitedSizeDict(size_limit=size_limit)
 
    def __call__(self, func):
@@ -38,8 +59,10 @@ class memoized(object):
            hashed_args = tuple(self._hash_quantity(a) for a in args)
            try:
                res = self.cache[hashed_args]
+               print "using old thing..."
                return res
            except KeyError:
+               print "using new thing...", args
                value = func(*args)
                self.cache[hashed_args] = value
                return value

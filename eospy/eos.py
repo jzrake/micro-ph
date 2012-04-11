@@ -10,7 +10,7 @@ class AdiabaticGas(physics.EquationOfStateEvaluator):
     _density_var = 'n'
     _vars = { 'n': 0, 'T': 1 }
 
-    @cache.memoized()
+    @cache.memoized('AdiabaticGas')
     def build_terms(self, args):
         gas = physics.IdealAdiabatic(*args)
         gas.particle_mass = 28*pq.constants.proton_mass
@@ -72,7 +72,7 @@ class NeutronStarEos(physics.EquationOfStateEvaluator):
                    'neutrinos': 4,
                    'antineutrinos': 5}
 
-    @cache.memoized()
+    @cache.memoized('NeutronStarEos')
     def build_terms(self, args):
         D, T, Yp = args
         np = Yp * D / shen.amu
