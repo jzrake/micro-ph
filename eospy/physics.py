@@ -165,8 +165,7 @@ class EquationOfStateEvaluator(object):
         # Some terms may use number density 'n', while others may use the mass
         # density 'D'.
         den = 'D'#self._density_var
-        ekey = 'specific_internal_energy' #('specific_internal_energy' if den is 'D' else
-               # 'internal_energy_per_particle')
+        ekey = 'specific_internal_energy'
 
         if method == 1:
             n = args[self._vars[den]]

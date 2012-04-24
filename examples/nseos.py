@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import numpy as np
+import h5py
 import quantities as pq
 from matplotlib import pyplot as plt
 from eospy.physics import *
@@ -78,7 +79,6 @@ def Pressure():
 
 
 def SoundSpeed():
-
     gas = eos.NeutronStarEos()
     memoized.load_cache('eos.cache')
 
@@ -138,6 +138,39 @@ def ChemicalPotential():
     plt.show()
 
 
+def WriteTable(ND=16, NT=16):
+    Yp = 0.08
+    D0, D1 = 0.5e12, 0.5e15
+    T0, T1 = 0.1, 100.0
+    dens = np.linspace(D0, D1, ND) * pq.g/pq.cm**3
+    temp = np.linspace(T0, T1, NT) * pq.MeV
+
+    gas = eos.AdiabaticGasWithDensity()
+    gas._mp = pq.constants.proton_mass
+    #gas = eos.NeutronStarEos()
+    memoized.load_cache('eos.cache')
+
+    def eval_func(func, units):
+        return np.array([[getattr(gas, func)(D, T, Yp).rescale(units).
+                          magnitude for T in temp] for D in dens])
+
+    table = h5py.File("adeos.h5", 'w')
+
+    table["density"    ] = np.array([[D.magnitude for T in temp] for D in dens])
+    table["temperature"] = np.array([[T.magnitude for T in temp] for D in dens])
+
+    table["pressure"] = eval_func("pressure", "MeV/fm^3")
+    table["internal_energy"] = eval_func("internal_energy", "MeV/fm^3")
+    table["sound_speed"] = eval_func("sound_speed", "c")
+
+    print np.array([[D.magnitude for T in temp] for D in dens])
+    print np.array([[T.magnitude for T in temp] for D in dens])
+
+    memoized.save_cache('eos.cache')
+
+
 #ChemicalPotential()
 #Pressure()
-SoundSpeed()
+#SoundSpeed()
+WriteTable(ND=32, NT=32)
+
